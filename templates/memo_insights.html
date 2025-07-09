@@ -1,0 +1,165 @@
+{% extends "base.html" %}
+
+{% block title %}メモ振り返り - 学習記録管理アプリ{% endblock %}
+
+{% block content %}
+<div class="row">
+    <div class="col-md-12">
+        <h1 class="mb-4">
+            <i class="fas fa-lightbulb"></i> メモ振り返り
+        </h1>
+        <p class="text-muted">学習の中で「理解できたこと」と「できなかったこと」を振り返って、次の学習に活かしましょう。</p>
+    </div>
+</div>
+
+<div class="row">
+    <!-- 理解できたこと -->
+    <div class="col-md-6">
+        <div class="card">
+            <div class="card-header bg-success text-white">
+                <h5 class="mb-0">
+                    <i class="fas fa-check-circle"></i> 理解できたこと
+                    <span class="badge bg-light text-success">{{ understood_items|length }}</span>
+                </h5>
+            </div>
+            <div class="card-body">
+                {% if understood_items %}
+                    <div class="accordion" id="understoodAccordion">
+                        {% for item in understood_items %}
+                            <div class="accordion-item">
+                                <h2 class="accordion-header" id="understood-{{ item.id }}">
+                                    <button class="accordion-button {% if not loop.first %}collapsed{% endif %}" 
+                                            type="button" data-bs-toggle="collapse" 
+                                            data-bs-target="#collapse-understood-{{ item.id }}"
+                                            aria-expanded="{% if loop.first %}true{% else %}false{% endif %}">
+                                        <div class="d-flex flex-column">
+                                            <strong>{{ item.date }}</strong>
+                                            <small class="text-muted">{{ item.content }}</small>
+                                        </div>
+                                    </button>
+                                </h2>
+                                <div id="collapse-understood-{{ item.id }}" 
+                                     class="accordion-collapse collapse {% if loop.first %}show{% endif %}"
+                                     data-bs-parent="#understoodAccordion">
+                                    <div class="accordion-body">
+                                        <div class="memo-section memo-understood">
+                                            <i class="fas fa-lightbulb text-success"></i>
+                                            {{ item.understood }}
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        {% endfor %}
+                    </div>
+                {% else %}
+                    <div class="text-center py-5">
+                        <i class="fas fa-lightbulb fa-3x text-muted mb-3"></i>
+                        <h6 class="text-muted">まだ「理解できたこと」の記録がありません</h6>
+                        <p class="text-muted">学習記録を追加する際に、理解できたことを記録してみましょう。</p>
+                        <a href="{{ url_for('add_record') }}" class="btn btn-success">
+                            <i class="fas fa-plus"></i> 記録を追加
+                        </a>
+                    </div>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+
+    <!-- できなかったこと -->
+    <div class="col-md-6">
+        <div class="card">
+            <div class="card-header bg-warning text-white">
+                <h5 class="mb-0">
+                    <i class="fas fa-exclamation-triangle"></i> できなかったこと
+                    <span class="badge bg-light text-warning">{{ could_not_do_items|length }}</span>
+                </h5>
+            </div>
+            <div class="card-body">
+                {% if could_not_do_items %}
+                    <div class="accordion" id="couldNotDoAccordion">
+                        {% for item in could_not_do_items %}
+                            <div class="accordion-item">
+                                <h2 class="accordion-header" id="could-not-do-{{ item.id }}">
+                                    <button class="accordion-button {% if not loop.first %}collapsed{% endif %}" 
+                                            type="button" data-bs-toggle="collapse" 
+                                            data-bs-target="#collapse-could-not-do-{{ item.id }}"
+                                            aria-expanded="{% if loop.first %}true{% else %}false{% endif %}">
+                                        <div class="d-flex flex-column">
+                                            <strong>{{ item.date }}</strong>
+                                            <small class="text-muted">{{ item.content }}</small>
+                                        </div>
+                                    </button>
+                                </h2>
+                                <div id="collapse-could-not-do-{{ item.id }}" 
+                                     class="accordion-collapse collapse {% if loop.first %}show{% endif %}"
+                                     data-bs-parent="#couldNotDoAccordion">
+                                    <div class="accordion-body">
+                                        <div class="memo-section memo-could-not-do">
+                                            <i class="fas fa-exclamation-triangle text-warning"></i>
+                                            {{ item.could_not_do }}
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        {% endfor %}
+                    </div>
+                {% else %}
+                    <div class="text-center py-5">
+                        <i class="fas fa-exclamation-triangle fa-3x text-muted mb-3"></i>
+                        <h6 class="text-muted">まだ「できなかったこと」の記録がありません</h6>
+                        <p class="text-muted">学習記録を追加する際に、できなかったことを記録してみましょう。</p>
+                        <a href="{{ url_for('add_record') }}" class="btn btn-warning">
+                            <i class="fas fa-plus"></i> 記録を追加
+                        </a>
+                    </div>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- 振り返りのヒント -->
+<div class="row mt-4">
+    <div class="col-md-12">
+        <div class="card">
+            <div class="card-header bg-info text-white">
+                <h6 class="mb-0"><i class="fas fa-info-circle"></i> 振り返りのヒント</h6>
+            </div>
+            <div class="card-body">
+                <div class="row">
+                    <div class="col-md-6">
+                        <h6 class="text-success"><i class="fas fa-check-circle"></i> 理解できたことの活用方法</h6>
+                        <ul class="small">
+                            <li>定期的に見返して知識を定着させる</li>
+                            <li>似た概念を学習する際の参考にする</li>
+                            <li>自分の成長を実感してモチベーションを維持する</li>
+                            <li>他の人に説明できるかチェックする</li>
+                        </ul>
+                    </div>
+                    <div class="col-md-6">
+                        <h6 class="text-warning"><i class="fas fa-exclamation-triangle"></i> できなかったことの活用方法</h6>
+                        <ul class="small">
+                            <li>次の学習の優先順位を決める</li>
+                            <li>同じ問題で詰まらないよう対策を考える</li>
+                            <li>関連する基礎知識を復習する</li>
+                            <li>解決できた時の達成感を味わう</li>
+                        </ul>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Quick Actions -->
+<div class="row mt-4">
+    <div class="col-md-12 text-center">
+        <a href="{{ url_for('add_record') }}" class="btn btn-primary btn-lg me-3">
+            <i class="fas fa-plus"></i> 新しい記録を追加
+        </a>
+        <a href="{{ url_for('dashboard') }}" class="btn btn-outline-primary btn-lg">
+            <i class="fas fa-home"></i> ダッシュボードに戻る
+        </a>
+    </div>
+</div>
+{% endblock %}

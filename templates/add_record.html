@@ -1,0 +1,140 @@
+{% extends "base.html" %}
+
+{% block title %}記録追加 - 学習記録管理アプリ{% endblock %}
+
+{% block content %}
+<div class="row">
+    <div class="col-md-8 offset-md-2">
+        <div class="card">
+            <div class="card-header bg-primary text-white">
+                <h4 class="mb-0"><i class="fas fa-plus"></i> 学習記録を追加</h4>
+            </div>
+            <div class="card-body">
+                <form method="POST">
+                    <div class="row">
+                        <div class="col-md-6">
+                            <div class="mb-3">
+                                <label for="date" class="form-label">日付 <span class="text-danger">*</span></label>
+                                <input type="date" class="form-control" id="date" name="date" required>
+                            </div>
+                        </div>
+                        <div class="col-md-6">
+                            <div class="mb-3">
+                                <label for="time" class="form-label">学習時間（分） <span class="text-danger">*</span></label>
+                                <input type="number" class="form-control" id="time" name="time" min="1" placeholder="例: 60" required>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <div class="mb-3">
+                        <label for="content" class="form-label">学習内容 <span class="text-danger">*</span></label>
+                        <textarea class="form-control" id="content" name="content" rows="3" placeholder="例: Pythonの基本文法を学習" required></textarea>
+                    </div>
+                    
+                    <!-- Memo Section -->
+                    <div class="card mb-3">
+                        <div class="card-header bg-light">
+                            <h6 class="mb-0"><i class="fas fa-sticky-note"></i> メモ機能（振り返り学習）</h6>
+                            <small class="text-muted">以下の項目は任意です。後から振り返りに活用できます。</small>
+                        </div>
+                        <div class="card-body">
+                            <div class="mb-3">
+                                <label for="understood" class="form-label">
+                                    <i class="fas fa-lightbulb text-success"></i> 理解できたこと
+                                    <small class="text-muted">（任意）</small>
+                                </label>
+                                <textarea class="form-control" id="understood" name="understood" rows="3" 
+                                          placeholder="例: 関数の基本的な書き方が理解できた。引数とreturnの関係が明確になった。"></textarea>
+                                <small class="form-text text-muted">
+                                    新しく理解できたことや、今日の学習で「なるほど！」と思ったことを記録しましょう。
+                                </small>
+                            </div>
+                            
+                            <div class="mb-3">
+                                <label for="could_not_do" class="form-label">
+                                    <i class="fas fa-exclamation-triangle text-warning"></i> できなかったこと
+                                    <small class="text-muted">（任意）</small>
+                                </label>
+                                <textarea class="form-control" id="could_not_do" name="could_not_do" rows="3" 
+                                          placeholder="例: クラスの継承がまだ理解できていない。エラーハンドリングの実装で詰まった。"></textarea>
+                                <small class="form-text text-muted">
+                                    今日できなかったことや、次回に持ち越したい課題を記録しましょう。
+                                </small>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <div class="d-grid gap-2 d-md-flex justify-content-md-end">
+                        <a href="{{ url_for('dashboard') }}" class="btn btn-secondary me-md-2">
+                            <i class="fas fa-times"></i> キャンセル
+                        </a>
+                        <button type="submit" class="btn btn-primary">
+                            <i class="fas fa-save"></i> 記録を保存
+                        </button>
+                    </div>
+                </form>
+            </div>
+        </div>
+        
+        <!-- Tips Section -->
+        <div class="card mt-4">
+            <div class="card-header bg-info text-white">
+                <h6 class="mb-0"><i class="fas fa-info-circle"></i> 💡 メモ機能の活用方法</h6>
+            </div>
+            <div class="card-body">
+                <div class="row">
+                    <div class="col-md-6">
+                        <h6 class="text-success"><i class="fas fa-check-circle"></i> 理解できたこと</h6>
+                        <ul class="small">
+                            <li>新しく学んだ概念や技術</li>
+                            <li>「なるほど！」と思った瞬間</li>
+                            <li>前回理解できなかったことが理解できた</li>
+                            <li>実際に動くコードが書けた</li>
+                        </ul>
+                    </div>
+                    <div class="col-md-6">
+                        <h6 class="text-warning"><i class="fas fa-exclamation-triangle"></i> できなかったこと</h6>
+                        <ul class="small">
+                            <li>エラーが解決できなかった</li>
+                            <li>理解に時間がかかった概念</li>
+                            <li>次回に持ち越したい課題</li>
+                            <li>もっと深く学びたい内容</li>
+                        </ul>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+    // Set today's date as default
+    document.getElementById('date').valueAsDate = new Date();
+    
+    // Auto-save to localStorage
+    const form = document.querySelector('form');
+    const inputs = form.querySelectorAll('input, textarea');
+    
+    inputs.forEach(input => {
+        // Load saved values
+        const savedValue = localStorage.getItem(`form_${input.name}`);
+        if (savedValue && input.type !== 'date') {
+            input.value = savedValue;
+        }
+        
+        // Save on input
+        input.addEventListener('input', () => {
+            localStorage.setItem(`form_${input.name}`, input.value);
+        });
+    });
+    
+    // Clear localStorage on successful submit
+    form.addEventListener('submit', () => {
+        inputs.forEach(input => {
+            localStorage.removeItem(`form_${input.name}`);
+        });
+    });
+</script>
+{% endblock %}
