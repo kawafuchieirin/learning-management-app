@@ -1,0 +1,142 @@
+{% extends "base.html" %}
+
+{% block title %}ダッシュボード - 学習記録管理アプリ{% endblock %}
+
+{% block content %}
+<div class="row">
+    <div class="col-md-12">
+        <h1 class="mb-4">
+            <i class="fas fa-chart-line"></i> 学習ダッシュボード
+        </h1>
+    </div>
+</div>
+
+<!-- Stats Card -->
+<div class="row mb-4">
+    <div class="col-md-4">
+        <div class="card stats-card">
+            <div class="card-body text-center">
+                <h5 class="card-title">今週の学習時間</h5>
+                <h2><i class="fas fa-clock"></i> {{ total_time }} 分</h2>
+            </div>
+        </div>
+    </div>
+    <div class="col-md-4">
+        <div class="card bg-success text-white">
+            <div class="card-body text-center">
+                <h5 class="card-title">理解できたこと</h5>
+                <h2><i class="fas fa-lightbulb"></i> {{ understood_items|length }} 項目</h2>
+            </div>
+        </div>
+    </div>
+    <div class="col-md-4">
+        <div class="card bg-warning text-white">
+            <div class="card-body text-center">
+                <h5 class="card-title">改善すべきこと</h5>
+                <h2><i class="fas fa-exclamation-triangle"></i> {{ could_not_do_items|length }} 項目</h2>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Recent Understood Items -->
+<div class="row mb-4">
+    <div class="col-md-6">
+        <div class="card">
+            <div class="card-header bg-success text-white">
+                <h5 class="mb-0"><i class="fas fa-check-circle"></i> 最近理解できたこと</h5>
+            </div>
+            <div class="card-body">
+                {% if understood_items %}
+                    {% for item in understood_items %}
+                        <div class="memo-section memo-understood">
+                            <small class="text-muted">{{ item.date }} - {{ item.content }}</small>
+                            <p class="mt-2 mb-0"><strong>{{ item.understood }}</strong></p>
+                        </div>
+                    {% endfor %}
+                {% else %}
+                    <p class="text-muted">まだ「理解できたこと」の記録がありません。</p>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+    
+    <div class="col-md-6">
+        <div class="card">
+            <div class="card-header bg-warning text-white">
+                <h5 class="mb-0"><i class="fas fa-exclamation-triangle"></i> 最近できなかったこと</h5>
+            </div>
+            <div class="card-body">
+                {% if could_not_do_items %}
+                    {% for item in could_not_do_items %}
+                        <div class="memo-section memo-could-not-do">
+                            <small class="text-muted">{{ item.date }} - {{ item.content }}</small>
+                            <p class="mt-2 mb-0"><strong>{{ item.could_not_do }}</strong></p>
+                        </div>
+                    {% endfor %}
+                {% else %}
+                    <p class="text-muted">まだ「できなかったこと」の記録がありません。</p>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Recent Study Records -->
+<div class="row">
+    <div class="col-md-12">
+        <div class="card">
+            <div class="card-header bg-primary text-white">
+                <h5 class="mb-0"><i class="fas fa-history"></i> 最近の学習記録</h5>
+            </div>
+            <div class="card-body">
+                {% if recent_records %}
+                    <div class="table-responsive">
+                        <table class="table table-striped">
+                            <thead>
+                                <tr>
+                                    <th>日付</th>
+                                    <th>内容</th>
+                                    <th>時間</th>
+                                    <th>メモ</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                {% for record in recent_records %}
+                                    <tr>
+                                        <td>{{ record.date }}</td>
+                                        <td>{{ record.content }}</td>
+                                        <td>{{ record.time }}分</td>
+                                        <td>
+                                            {% if record.understood %}
+                                                <span class="badge bg-success">理解: {{ record.understood[:30] }}{% if record.understood|length > 30 %}...{% endif %}</span>
+                                            {% endif %}
+                                            {% if record.could_not_do %}
+                                                <span class="badge bg-warning">課題: {{ record.could_not_do[:30] }}{% if record.could_not_do|length > 30 %}...{% endif %}</span>
+                                            {% endif %}
+                                        </td>
+                                    </tr>
+                                {% endfor %}
+                            </tbody>
+                        </table>
+                    </div>
+                {% else %}
+                    <p class="text-muted">まだ学習記録がありません。<a href="{{ url_for('add_record') }}">記録を追加</a>してください。</p>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Quick Actions -->
+<div class="row mt-4">
+    <div class="col-md-12 text-center">
+        <a href="{{ url_for('add_record') }}" class="btn btn-primary btn-lg me-3">
+            <i class="fas fa-plus"></i> 新しい記録を追加
+        </a>
+        <a href="{{ url_for('memo_insights') }}" class="btn btn-outline-primary btn-lg">
+            <i class="fas fa-lightbulb"></i> メモ振り返り
+        </a>
+    </div>
+</div>
+{% endblock %}
