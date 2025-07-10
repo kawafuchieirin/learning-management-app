@@ -46,11 +46,11 @@ def start_dynamodb_local():
         "-Djava.library.path=./DynamoDBLocal_lib", 
         "-jar", "DynamoDBLocal.jar", 
         "-sharedDb",
-        "-port", "8000"
+        "-port", "8002"
     ]
     
     print(f"Running: {' '.join(cmd)}")
-    print("📍 DynamoDB Local will be available at: http://localhost:8000")
+    print("📍 DynamoDB Local will be available at: http://localhost:8002")
     print("🔄 Press Ctrl+C to stop the server")
     
     try:

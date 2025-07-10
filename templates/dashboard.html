@@ -13,15 +13,24 @@
 
 <!-- Stats Card -->
 <div class="row mb-4">
-    <div class="col-md-4">
+    <div class="col-md-3">
         <div class="card stats-card">
             <div class="card-body text-center">
                 <h5 class="card-title">今週の学習時間</h5>
-                <h2><i class="fas fa-clock"></i> {{ total_time }} 分</h2>
+                <h2><i class="fas fa-clock"></i> {{ week_total_time }} 分</h2>
             </div>
         </div>
     </div>
-    <div class="col-md-4">
+    <div class="col-md-3">
+        <div class="card bg-primary text-white">
+            <div class="card-body text-center">
+                <h5 class="card-title">全期間の学習時間</h5>
+                <h2><i class="fas fa-history"></i> {{ all_time_total }} 分</h2>
+                <small>{{ total_days }}日間 / 平均{{ avg_time_per_day }}分/日</small>
+            </div>
+        </div>
+    </div>
+    <div class="col-md-3">
         <div class="card bg-success text-white">
             <div class="card-body text-center">
                 <h5 class="card-title">理解できたこと</h5>
@@ -29,7 +38,7 @@
             </div>
         </div>
     </div>
-    <div class="col-md-4">
+    <div class="col-md-3">
         <div class="card bg-warning text-white">
             <div class="card-body text-center">
                 <h5 class="card-title">改善すべきこと</h5>
@@ -131,11 +140,14 @@
 <!-- Quick Actions -->
 <div class="row mt-4">
     <div class="col-md-12 text-center">
-        <a href="{{ url_for('add_record') }}" class="btn btn-primary btn-lg me-3">
+        <a href="{{ url_for('add_record') }}" class="btn btn-primary btn-lg me-2">
             <i class="fas fa-plus"></i> 新しい記録を追加
         </a>
-        <a href="{{ url_for('memo_insights') }}" class="btn btn-outline-primary btn-lg">
+        <a href="{{ url_for('memo_insights') }}" class="btn btn-outline-primary btn-lg me-2">
             <i class="fas fa-lightbulb"></i> メモ振り返り
+        </a>
+        <a href="{{ url_for('export_csv') }}" class="btn btn-success btn-lg">
+            <i class="fas fa-file-csv"></i> CSVエクスポート
         </a>
     </div>
 </div>
