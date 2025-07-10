@@ -1,6 +1,7 @@
 # 学習記録管理アプリ 📚
 
 学習記録を管理し、「理解できたこと」と「できなかったこと」をメモとして記録できるWebアプリケーションです。
+**DynamoDB Local** を使用してローカル開発環境で柔軟なデータ管理を実現し、将来的にAWS DynamoDBへの移行も簡単に行えます。
 
 ## 🎯 機能
 
@@ -11,22 +12,47 @@
 - **ダッシュボード**: 学習状況とメモのハイライト表示
 - **全記録表示**: 学習履歴の一覧表示
 - **メモ振り返り**: 理解できたことと改善すべきことの整理
+- **DynamoDB Local**: ローカル開発環境でのNoSQLデータベース体験
 
 ## 🚀 セットアップ
 
-### 1. 依存関係のインストール
+### 1. 前提条件
+
+- **Python 3.7+**: アプリケーション実行環境
+- **Java 8+**: DynamoDB Local実行に必要
+
+### 2. 依存関係のインストール
 
 ```bash
 pip install -r requirements.txt
 ```
 
-### 2. アプリケーションの起動
+### 3. DynamoDB Local のセットアップと起動
 
+**自動セットアップ (推奨)**:
+```bash
+python setup_dynamodb.py
+```
+
+**手動セットアップ**:
+```bash
+# DynamoDB Local のダウンロード
+curl -o dynamodb_local.tar.gz https://d1ni2b6xgvw0s0.cloudfront.net/v2.x/dynamodb_local_latest.tar.gz
+tar -xzf dynamodb_local.tar.gz -C dynamodb_local/
+
+# DynamoDB Local の起動
+cd dynamodb_local
+java -Djava.library.path=./DynamoDBLocal_lib -jar DynamoDBLocal.jar -sharedDb -port 8000
+```
+
+### 4. アプリケーションの起動
+
+**新しいターミナルを開いて**:
 ```bash
 python app.py
 ```
 
-### 3. ブラウザでアクセス
+### 5. ブラウザでアクセス
 
 ```
 http://localhost:5000
@@ -34,17 +60,25 @@ http://localhost:5000
 
 ## 🗄️ データベース構造
 
-```sql
-CREATE TABLE study_records (
-    id INTEGER PRIMARY KEY AUTOINCREMENT,
-    date TEXT NOT NULL,
-    content TEXT NOT NULL,
-    time INTEGER NOT NULL,
-    could_not_do TEXT,
-    understood TEXT,
-    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
-);
-```
+### DynamoDB テーブル設計
+
+**テーブル名**: `study_records`
+
+**キー設計**:
+- **Partition Key**: `user_id` (String) - ユーザー識別子
+- **Sort Key**: `record_id` (String) - 記録ID（タイムスタンプ + UUID）
+
+**属性**:
+| 属性名 | 型 | 説明 | 必須 |
+|--------|----|----|------|
+| user_id | String | ユーザー識別子 | ✅ |
+| record_id | String | 記録ID | ✅ |
+| date | String | 記録日 (YYYY-MM-DD) | ✅ |
+| content | String | 学習内容 | ✅ |
+| time | Number | 学習時間（分） | ✅ |
+| could_not_do | String | できなかったこと | ❌ |
+| understood | String | 理解できたこと | ❌ |
+| created_at | String | 作成日時 (ISO形式) | ✅ |
 
 ## 📱 使用方法
 
@@ -57,5 +91,35 @@ CREATE TABLE study_records (
 
 - **フロントエンド**: HTML, CSS, JavaScript, Bootstrap 5
 - **バックエンド**: Python Flask
-- **データベース**: SQLite
+- **データベース**: DynamoDB Local (将来的にAWS DynamoDB)
 - **アイコン**: Font Awesome
+- **AWS SDK**: Boto3
+
+## 🌟 DynamoDB Local の利点
+
+- **ノーコスト開発**: AWS料金を気にせずに開発可能
+- **高速レスポンス**: ローカル実行による高速なデータ操作
+- **柔軟なスキーマ**: 後から属性を追加しやすいNoSQL設計
+- **AWS互換**: AWS DynamoDBへの移行が簡単
+- **オフライン開発**: インターネット接続なしでも開発可能
+
+## 🔄 AWS DynamoDB への移行
+
+本番環境でAWS DynamoDBを使用する場合は、`app.py`の以下の設定を変更してください：
+
+```python
+# ローカル開発用
+dynamodb = boto3.resource(
+    'dynamodb',
+    endpoint_url="http://localhost:8000",  # この行を削除
+    region_name="ap-northeast-1",
+    aws_access_key_id="fakeMyKeyId",      # 実際のAWSクレデンシャルを設定
+    aws_secret_access_key="fakeSecretAccessKey"  # 実際のAWSクレデンシャルを設定
+)
+
+# 本番環境用
+dynamodb = boto3.resource(
+    'dynamodb',
+    region_name="ap-northeast-1"
+)
+```

@@ -1,78 +1,117 @@
 from flask import Flask, render_template, request, redirect, url_for, flash
-import sqlite3
+import boto3
 from datetime import datetime, timedelta
 import os
+import uuid
+from botocore.exceptions import ClientError
 
 app = Flask(__name__)
 app.secret_key = 'your-secret-key-here'
 
-# Database setup
-DATABASE = 'learning_app.db'
+# DynamoDB setup
+dynamodb = boto3.resource(
+    'dynamodb',
+    endpoint_url="http://localhost:8000",
+    region_name="ap-northeast-1",
+    aws_access_key_id="fakeMyKeyId",
+    aws_secret_access_key="fakeSecretAccessKey"
+)
 
-def get_db_connection():
-    conn = sqlite3.connect(DATABASE)
-    conn.row_factory = sqlite3.Row
-    return conn
+TABLE_NAME = 'study_records'
+DEFAULT_USER_ID = 'default_user'  # For now, using single user
+
+def get_table():
+    """Get the DynamoDB table"""
+    return dynamodb.Table(TABLE_NAME)
 
 def init_db():
-    """Initialize the database with the study_records table"""
-    conn = get_db_connection()
-    conn.execute('''
-        CREATE TABLE IF NOT EXISTS study_records (
-            id INTEGER PRIMARY KEY AUTOINCREMENT,
-            date TEXT NOT NULL,
-            content TEXT NOT NULL,
-            time INTEGER NOT NULL,
-            could_not_do TEXT,
-            understood TEXT,
-            created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+    """Initialize the DynamoDB table"""
+    try:
+        table = dynamodb.create_table(
+            TableName=TABLE_NAME,
+            KeySchema=[
+                {
+                    'AttributeName': 'user_id',
+                    'KeyType': 'HASH'  # Partition key
+                },
+                {
+                    'AttributeName': 'record_id',
+                    'KeyType': 'RANGE'  # Sort key
+                }
+            ],
+            AttributeDefinitions=[
+                {
+                    'AttributeName': 'user_id',
+                    'AttributeType': 'S'
+                },
+                {
+                    'AttributeName': 'record_id',
+                    'AttributeType': 'S'
+                }
+            ],
+            BillingMode='PAY_PER_REQUEST'
         )
-    ''')
-    conn.commit()
-    conn.close()
+        print(f"Table {TABLE_NAME} created successfully!")
+    except ClientError as e:
+        if e.response['Error']['Code'] == 'ResourceInUseException':
+            print(f"Table {TABLE_NAME} already exists.")
+        else:
+            print(f"Error creating table: {e}")
+            raise
 
 @app.route('/')
 def dashboard():
     """Display the dashboard with recent study records and memo highlights"""
-    conn = get_db_connection()
+    table = get_table()
     
-    # Get recent study records (last 7 days)
-    recent_records = conn.execute('''
-        SELECT * FROM study_records 
-        ORDER BY date DESC, created_at DESC 
-        LIMIT 10
-    ''').fetchall()
+    try:
+        # Get all records for the user
+        response = table.query(
+            KeyConditionExpression='user_id = :user_id',
+            ExpressionAttributeValues={':user_id': DEFAULT_USER_ID}
+        )
+        
+        records = response.get('Items', [])
+        
+        # Sort by date descending, then by created_at descending
+        records.sort(key=lambda x: (x.get('date', ''), x.get('created_at', '')), reverse=True)
+        
+        # Get recent study records (last 10)
+        recent_records = records[:10]
+        
+        # Get recent "understood" items
+        understood_items = [
+            record for record in records 
+            if record.get('understood') and record.get('understood').strip()
+        ][:5]
+        
+        # Get recent "could not do" items
+        could_not_do_items = [
+            record for record in records 
+            if record.get('could_not_do') and record.get('could_not_do').strip()
+        ][:5]
+        
+        # Calculate total study time this week
+        week_ago = (datetime.now() - timedelta(days=7)).strftime('%Y-%m-%d')
+        total_time = sum(
+            int(record.get('time', 0)) for record in records 
+            if record.get('date', '') >= week_ago
+        )
+        
+        return render_template('dashboard.html', 
+                             recent_records=recent_records,
+                             understood_items=understood_items,
+                             could_not_do_items=could_not_do_items,
+                             total_time=total_time)
     
-    # Get recent "understood" items
-    understood_items = conn.execute('''
-        SELECT id, date, content, understood FROM study_records 
-        WHERE understood IS NOT NULL AND understood != ''
-        ORDER BY date DESC, created_at DESC 
-        LIMIT 5
-    ''').fetchall()
-    
-    # Get recent "could not do" items
-    could_not_do_items = conn.execute('''
-        SELECT id, date, content, could_not_do FROM study_records 
-        WHERE could_not_do IS NOT NULL AND could_not_do != ''
-        ORDER BY date DESC, created_at DESC 
-        LIMIT 5
-    ''').fetchall()
-    
-    # Calculate total study time this week
-    week_ago = (datetime.now() - timedelta(days=7)).strftime('%Y-%m-%d')
-    total_time = conn.execute('''
-        SELECT SUM(time) as total FROM study_records 
-        WHERE date >= ?
-    ''', (week_ago,)).fetchone()['total'] or 0
-    
-    conn.close()
-    
-    return render_template('dashboard.html', 
-                         recent_records=recent_records,
-                         understood_items=understood_items,
-                         could_not_do_items=could_not_do_items,
-                         total_time=total_time)
+    except ClientError as e:
+        print(f"Error querying DynamoDB: {e}")
+        flash('データベースエラーが発生しました。', 'error')
+        return render_template('dashboard.html', 
+                             recent_records=[],
+                             understood_items=[],
+                             could_not_do_items=[],
+                             total_time=0)
 
 @app.route('/add_record', methods=['GET', 'POST'])
 def add_record():
@@ -88,55 +127,104 @@ def add_record():
             flash('日付、内容、時間は必須項目です。', 'error')
             return render_template('add_record.html')
         
-        conn = get_db_connection()
-        conn.execute('''
-            INSERT INTO study_records (date, content, time, could_not_do, understood)
-            VALUES (?, ?, ?, ?, ?)
-        ''', (date, content, time, could_not_do or None, understood or None))
-        conn.commit()
-        conn.close()
+        # Create a unique record ID using timestamp + UUID
+        record_id = f"{datetime.now().strftime('%Y%m%d_%H%M%S')}_{str(uuid.uuid4())[:8]}"
+        created_at = datetime.now().isoformat()
         
-        flash('学習記録が追加されました！', 'success')
-        return redirect(url_for('dashboard'))
+        table = get_table()
+        
+        try:
+            # Prepare item for DynamoDB
+            item = {
+                'user_id': DEFAULT_USER_ID,
+                'record_id': record_id,
+                'date': date,
+                'content': content,
+                'time': time,
+                'created_at': created_at
+            }
+            
+            # Add optional fields only if they have values
+            if could_not_do:
+                item['could_not_do'] = could_not_do
+            if understood:
+                item['understood'] = understood
+            
+            table.put_item(Item=item)
+            
+            flash('学習記録が追加されました！', 'success')
+            return redirect(url_for('dashboard'))
+            
+        except ClientError as e:
+            print(f"Error adding record to DynamoDB: {e}")
+            flash('データベースエラーが発生しました。', 'error')
+            return render_template('add_record.html')
     
     return render_template('add_record.html')
 
 @app.route('/records')
 def records():
     """Display all study records"""
-    conn = get_db_connection()
-    all_records = conn.execute('''
-        SELECT * FROM study_records 
-        ORDER BY date DESC, created_at DESC
-    ''').fetchall()
-    conn.close()
+    table = get_table()
     
-    return render_template('records.html', records=all_records)
+    try:
+        # Get all records for the user
+        response = table.query(
+            KeyConditionExpression='user_id = :user_id',
+            ExpressionAttributeValues={':user_id': DEFAULT_USER_ID}
+        )
+        
+        all_records = response.get('Items', [])
+        
+        # Sort by date descending, then by created_at descending
+        all_records.sort(key=lambda x: (x.get('date', ''), x.get('created_at', '')), reverse=True)
+        
+        return render_template('records.html', records=all_records)
+    
+    except ClientError as e:
+        print(f"Error querying records from DynamoDB: {e}")
+        flash('データベースエラーが発生しました。', 'error')
+        return render_template('records.html', records=[])
 
 @app.route('/memo_insights')
 def memo_insights():
     """Display memo insights - things understood and things to work on"""
-    conn = get_db_connection()
+    table = get_table()
     
-    # Get all "understood" items
-    understood_items = conn.execute('''
-        SELECT id, date, content, understood FROM study_records 
-        WHERE understood IS NOT NULL AND understood != ''
-        ORDER BY date DESC, created_at DESC
-    ''').fetchall()
+    try:
+        # Get all records for the user
+        response = table.query(
+            KeyConditionExpression='user_id = :user_id',
+            ExpressionAttributeValues={':user_id': DEFAULT_USER_ID}
+        )
+        
+        records = response.get('Items', [])
+        
+        # Sort by date descending, then by created_at descending
+        records.sort(key=lambda x: (x.get('date', ''), x.get('created_at', '')), reverse=True)
+        
+        # Get all "understood" items
+        understood_items = [
+            record for record in records 
+            if record.get('understood') and record.get('understood').strip()
+        ]
+        
+        # Get all "could not do" items
+        could_not_do_items = [
+            record for record in records 
+            if record.get('could_not_do') and record.get('could_not_do').strip()
+        ]
+        
+        return render_template('memo_insights.html', 
+                             understood_items=understood_items,
+                             could_not_do_items=could_not_do_items)
     
-    # Get all "could not do" items
-    could_not_do_items = conn.execute('''
-        SELECT id, date, content, could_not_do FROM study_records 
-        WHERE could_not_do IS NOT NULL AND could_not_do != ''
-        ORDER BY date DESC, created_at DESC
-    ''').fetchall()
-    
-    conn.close()
-    
-    return render_template('memo_insights.html', 
-                         understood_items=understood_items,
-                         could_not_do_items=could_not_do_items)
+    except ClientError as e:
+        print(f"Error querying memo insights from DynamoDB: {e}")
+        flash('データベースエラーが発生しました。', 'error')
+        return render_template('memo_insights.html', 
+                             understood_items=[],
+                             could_not_do_items=[])
 
 if __name__ == '__main__':
     init_db()
