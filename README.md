@@ -12,6 +12,7 @@
 - **ダッシュボード**: 学習状況とメモのハイライト表示
 - **全記録表示**: 学習履歴の一覧表示
 - **メモ振り返り**: 理解できたことと改善すべきことの整理
+- **CSVエクスポート**: 学習記録をCSV形式でダウンロード
 - **DynamoDB Local**: ローカル開発環境でのNoSQLデータベース体験
 
 ## 🚀 セットアップ
@@ -42,13 +43,23 @@ tar -xzf dynamodb_local.tar.gz -C dynamodb_local/
 
 # DynamoDB Local の起動
 cd dynamodb_local
-java -Djava.library.path=./DynamoDBLocal_lib -jar DynamoDBLocal.jar -sharedDb -port 8000
+java -Djava.library.path=./DynamoDBLocal_lib -jar DynamoDBLocal.jar -sharedDb -port 8002
 ```
 
 ### 4. アプリケーションの起動
 
-**新しいターミナルを開いて**:
+**方法1: 統合起動スクリプト（推奨） - 1つのターミナルで実行**
 ```bash
+python run.py
+```
+このコマンドで、DynamoDB LocalとFlaskアプリが同時に起動します。
+
+**方法2: 個別起動（従来の方法）**
+```bash
+# ターミナル1: DynamoDB Localを起動
+python setup_dynamodb.py
+
+# ターミナル2: Flaskアプリを起動
 python app.py
 ```
 
@@ -57,6 +68,10 @@ python app.py
 ```
 http://localhost:5000
 ```
+
+### 6. アプリケーションの停止
+
+`run.py`を使用している場合は、`Ctrl+C`で両方のサービスが自動的に停止します。
 
 ## 🗄️ データベース構造
 
@@ -86,6 +101,7 @@ http://localhost:5000
 2. **メモ入力**: 理解できたことや課題を自由に記録
 3. **ダッシュボード**: 学習状況とメモのハイライトを確認
 4. **振り返り**: メモ機能で過去の学習を振り返り
+5. **CSVエクスポート**: 学習データをExcelなどで分析
 
 ## 🔧 技術スタック
 
@@ -111,7 +127,7 @@ http://localhost:5000
 # ローカル開発用
 dynamodb = boto3.resource(
     'dynamodb',
-    endpoint_url="http://localhost:8000",  # この行を削除
+    endpoint_url="http://localhost:8002",  # この行を削除
     region_name="ap-northeast-1",
     aws_access_key_id="fakeMyKeyId",      # 実際のAWSクレデンシャルを設定
     aws_secret_access_key="fakeSecretAccessKey"  # 実際のAWSクレデンシャルを設定
