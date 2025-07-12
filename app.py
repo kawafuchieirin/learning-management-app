@@ -592,7 +592,6 @@ def edit_roadmap(roadmap_id):
         milestone_titles = request.form.getlist('milestone_title[]')
         milestone_descriptions = request.form.getlist('milestone_description[]')
         milestone_durations = request.form.getlist('milestone_duration[]')
-        milestone_completed = request.form.getlist('milestone_completed[]')
         
         for i in range(len(milestone_titles)):
             if milestone_titles[i].strip():
