@@ -57,6 +57,11 @@
                         </a>
                     </li>
                     <li class="nav-item">
+                        <a class="nav-link" href="{{ url_for('timer') }}">
+                            <i class="fas fa-stopwatch"></i> タイマー
+                        </a>
+                    </li>
+                    <li class="nav-item">
                         <a class="nav-link" href="{{ url_for('records') }}">
                             <i class="fas fa-list"></i> 全記録
                         </a>
@@ -64,6 +69,16 @@
                     <li class="nav-item">
                         <a class="nav-link" href="{{ url_for('memo_insights') }}">
                             <i class="fas fa-lightbulb"></i> メモ振り返り
+                        </a>
+                    </li>
+                    <li class="nav-item">
+                        <a class="nav-link" href="{{ url_for('category_stats') }}">
+                            <i class="fas fa-chart-pie"></i> カテゴリー別集計
+                        </a>
+                    </li>
+                    <li class="nav-item">
+                        <a class="nav-link" href="{{ url_for('roadmaps') }}">
+                            <i class="fas fa-road"></i> ロードマップ
                         </a>
                     </li>
                 </ul>

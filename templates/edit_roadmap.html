@@ -1,0 +1,232 @@
+{% extends "base.html" %}
+
+{% block title %}ロードマップ編集 - 学習記録管理アプリ{% endblock %}
+
+{% block content %}
+<div class="row">
+    <div class="col-md-12">
+        <h1 class="mb-4">
+            <i class="fas fa-edit"></i> ロードマップを編集
+        </h1>
+    </div>
+</div>
+
+<div class="row">
+    <div class="col-md-8">
+        <div class="card">
+            <div class="card-body">
+                <form method="POST" action="{{ url_for('edit_roadmap', roadmap_id=roadmap.roadmap_id) }}">
+                    <div class="mb-3">
+                        <label for="title" class="form-label">タイトル <span class="text-danger">*</span></label>
+                        <input type="text" class="form-control" id="title" name="title" 
+                               value="{{ roadmap.title }}" required>
+                    </div>
+                    
+                    <div class="mb-3">
+                        <label for="description" class="form-label">説明</label>
+                        <textarea class="form-control" id="description" name="description" rows="3">{{ roadmap.description or '' }}</textarea>
+                    </div>
+                    
+                    <div class="mb-4">
+                        <label for="goal" class="form-label">最終目標</label>
+                        <input type="text" class="form-control" id="goal" name="goal" 
+                               value="{{ roadmap.goal or '' }}">
+                    </div>
+                    
+                    <h5 class="mb-3">マイルストーン</h5>
+                    <div id="milestones-container">
+                        {% for milestone in roadmap.milestones %}
+                            <div class="milestone-item mb-3 p-3 border rounded">
+                                <input type="hidden" name="milestone_id[]" value="{{ milestone.id }}">
+                                <div class="row">
+                                    <div class="col-md-6">
+                                        <label class="form-label">マイルストーン名</label>
+                                        <input type="text" class="form-control" name="milestone_title[]" 
+                                               value="{{ milestone.title }}">
+                                    </div>
+                                    <div class="col-md-3">
+                                        <label class="form-label">予定日数</label>
+                                        <input type="number" class="form-control" name="milestone_duration[]" 
+                                               value="{{ milestone.estimated_days }}" min="1">
+                                    </div>
+                                    <div class="col-md-3 d-flex align-items-end">
+                                        {% if milestone.completed %}
+                                            <span class="badge bg-success me-2">
+                                                <i class="fas fa-check"></i> 完了
+                                            </span>
+                                        {% endif %}
+                                        <button type="button" class="btn btn-sm btn-danger remove-milestone">
+                                            <i class="fas fa-trash"></i>
+                                        </button>
+                                    </div>
+                                </div>
+                                <div class="row mt-2">
+                                    <div class="col-md-12">
+                                        <label class="form-label">詳細説明</label>
+                                        <textarea class="form-control" name="milestone_description[]" rows="2">{{ milestone.description or '' }}</textarea>
+                                    </div>
+                                </div>
+                            </div>
+                        {% endfor %}
+                        
+                        {% if not roadmap.milestones %}
+                            <div class="milestone-item mb-3 p-3 border rounded">
+                                <input type="hidden" name="milestone_id[]" value="">
+                                <div class="row">
+                                    <div class="col-md-6">
+                                        <label class="form-label">マイルストーン名</label>
+                                        <input type="text" class="form-control" name="milestone_title[]">
+                                    </div>
+                                    <div class="col-md-3">
+                                        <label class="form-label">予定日数</label>
+                                        <input type="number" class="form-control" name="milestone_duration[]" 
+                                               value="7" min="1">
+                                    </div>
+                                    <div class="col-md-3 d-flex align-items-end">
+                                        <button type="button" class="btn btn-sm btn-danger remove-milestone" style="display:none;">
+                                            <i class="fas fa-trash"></i>
+                                        </button>
+                                    </div>
+                                </div>
+                                <div class="row mt-2">
+                                    <div class="col-md-12">
+                                        <label class="form-label">詳細説明</label>
+                                        <textarea class="form-control" name="milestone_description[]" rows="2"></textarea>
+                                    </div>
+                                </div>
+                            </div>
+                        {% endif %}
+                    </div>
+                    
+                    <button type="button" class="btn btn-secondary mb-4" id="add-milestone">
+                        <i class="fas fa-plus"></i> マイルストーンを追加
+                    </button>
+                    
+                    <div class="d-flex justify-content-between">
+                        <div>
+                            <a href="{{ url_for('view_roadmap', roadmap_id=roadmap.roadmap_id) }}" class="btn btn-outline-secondary">
+                                <i class="fas fa-times"></i> キャンセル
+                            </a>
+                            <button type="button" class="btn btn-danger ms-2" onclick="confirmDelete()">
+                                <i class="fas fa-trash"></i> 削除
+                            </button>
+                        </div>
+                        <button type="submit" class="btn btn-primary">
+                            <i class="fas fa-save"></i> 更新
+                        </button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+    
+    <div class="col-md-4">
+        <div class="card bg-light">
+            <div class="card-body">
+                <h5 class="card-title"><i class="fas fa-info-circle"></i> 編集のヒント</h5>
+                <ul class="small">
+                    <li>完了済みマイルストーンの進捗データは保持されます</li>
+                    <li>マイルストーンを削除すると、その進捗データも失われます</li>
+                    <li>新しいマイルストーンを追加できます</li>
+                    <li>予定日数を調整して計画を最適化しましょう</li>
+                </ul>
+                
+                <div class="mt-3">
+                    <small class="text-muted">
+                        <i class="fas fa-calendar"></i> 作成日: {{ roadmap.created_at[:10] }}<br>
+                        {% if roadmap.updated_at %}
+                            <i class="fas fa-edit"></i> 更新日: {{ roadmap.updated_at[:10] }}
+                        {% endif %}
+                    </small>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- 削除確認モーダル -->
+<div class="modal fade" id="deleteModal" tabindex="-1">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title">ロードマップの削除</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body">
+                <p>このロードマップを削除しますか？</p>
+                <div class="alert alert-warning">
+                    <i class="fas fa-exclamation-triangle"></i> 
+                    <strong>注意:</strong> この操作は取り消すことができません。すべてのマイルストーンと進捗データが失われます。
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">キャンセル</button>
+                <form method="POST" action="{{ url_for('delete_roadmap', roadmap_id=roadmap.roadmap_id) }}" style="display: inline;">
+                    <button type="submit" class="btn btn-danger">削除する</button>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    const container = document.getElementById('milestones-container');
+    const addButton = document.getElementById('add-milestone');
+    
+    function updateRemoveButtons() {
+        const items = container.querySelectorAll('.milestone-item');
+        items.forEach(item => {
+            const removeBtn = item.querySelector('.remove-milestone');
+            removeBtn.style.display = items.length > 1 ? 'block' : 'none';
+        });
+    }
+    
+    addButton.addEventListener('click', function() {
+        const template = document.createElement('div');
+        template.className = 'milestone-item mb-3 p-3 border rounded';
+        template.innerHTML = `
+            <input type="hidden" name="milestone_id[]" value="">
+            <div class="row">
+                <div class="col-md-6">
+                    <label class="form-label">マイルストーン名</label>
+                    <input type="text" class="form-control" name="milestone_title[]">
+                </div>
+                <div class="col-md-3">
+                    <label class="form-label">予定日数</label>
+                    <input type="number" class="form-control" name="milestone_duration[]" value="7" min="1">
+                </div>
+                <div class="col-md-3 d-flex align-items-end">
+                    <button type="button" class="btn btn-sm btn-danger remove-milestone">
+                        <i class="fas fa-trash"></i>
+                    </button>
+                </div>
+            </div>
+            <div class="row mt-2">
+                <div class="col-md-12">
+                    <label class="form-label">詳細説明</label>
+                    <textarea class="form-control" name="milestone_description[]" rows="2"></textarea>
+                </div>
+            </div>
+        `;
+        container.appendChild(template);
+        updateRemoveButtons();
+    });
+    
+    container.addEventListener('click', function(e) {
+        if (e.target.classList.contains('remove-milestone') || e.target.closest('.remove-milestone')) {
+            const item = e.target.closest('.milestone-item');
+            item.remove();
+            updateRemoveButtons();
+        }
+    });
+    
+    updateRemoveButtons();
+});
+
+function confirmDelete() {
+    const modal = new bootstrap.Modal(document.getElementById('deleteModal'));
+    modal.show();
+}
+</script>
+{% endblock %}

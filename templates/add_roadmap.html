@@ -1,0 +1,132 @@
+{% extends "base.html" %}
+
+{% block title %}新しいロードマップ - 学習記録管理アプリ{% endblock %}
+
+{% block content %}
+<div class="row">
+    <div class="col-md-12">
+        <h1 class="mb-4">
+            <i class="fas fa-road"></i> 新しいロードマップを作成
+        </h1>
+    </div>
+</div>
+
+<div class="row">
+    <div class="col-md-8">
+        <div class="card">
+            <div class="card-body">
+                <form method="POST" action="{{ url_for('add_roadmap') }}">
+                    <div class="mb-3">
+                        <label for="title" class="form-label">タイトル <span class="text-danger">*</span></label>
+                        <input type="text" class="form-control" id="title" name="title" 
+                               placeholder="例: Python機械学習マスター" required>
+                    </div>
+                    
+                    <div class="mb-3">
+                        <label for="description" class="form-label">説明</label>
+                        <textarea class="form-control" id="description" name="description" rows="3"
+                                  placeholder="このロードマップの概要を説明してください"></textarea>
+                    </div>
+                    
+                    <div class="mb-4">
+                        <label for="goal" class="form-label">最終目標</label>
+                        <input type="text" class="form-control" id="goal" name="goal" 
+                               placeholder="例: Kaggleで銀メダルを獲得する">
+                    </div>
+                    
+                    <h5 class="mb-3">マイルストーン</h5>
+                    <div id="milestones-container">
+                        <div class="milestone-item mb-3 p-3 border rounded">
+                            <div class="row">
+                                <div class="col-md-6">
+                                    <label class="form-label">マイルストーン名</label>
+                                    <input type="text" class="form-control" name="milestone_title[]" 
+                                           placeholder="例: Python基礎を習得">
+                                </div>
+                                <div class="col-md-3">
+                                    <label class="form-label">予定日数</label>
+                                    <input type="number" class="form-control" name="milestone_duration[]" 
+                                           value="7" min="1">
+                                </div>
+                                <div class="col-md-3 d-flex align-items-end">
+                                    <button type="button" class="btn btn-sm btn-danger remove-milestone" style="display:none;">
+                                        <i class="fas fa-trash"></i>
+                                    </button>
+                                </div>
+                            </div>
+                            <div class="row mt-2">
+                                <div class="col-md-12">
+                                    <label class="form-label">詳細説明</label>
+                                    <textarea class="form-control" name="milestone_description[]" rows="2"
+                                              placeholder="このマイルストーンで達成すること"></textarea>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <button type="button" class="btn btn-secondary mb-4" id="add-milestone">
+                        <i class="fas fa-plus"></i> マイルストーンを追加
+                    </button>
+                    
+                    <div class="d-flex justify-content-between">
+                        <a href="{{ url_for('roadmaps') }}" class="btn btn-outline-secondary">
+                            <i class="fas fa-times"></i> キャンセル
+                        </a>
+                        <button type="submit" class="btn btn-primary">
+                            <i class="fas fa-save"></i> ロードマップを作成
+                        </button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+    
+    <div class="col-md-4">
+        <div class="card bg-light">
+            <div class="card-body">
+                <h5 class="card-title"><i class="fas fa-info-circle"></i> ロードマップのヒント</h5>
+                <ul class="small">
+                    <li>明確で測定可能な目標を設定しましょう</li>
+                    <li>マイルストーンは達成可能な小さな目標に分割しましょう</li>
+                    <li>各マイルストーンには現実的な期間を設定しましょう</li>
+                    <li>定期的に進捗を確認して、必要に応じて調整しましょう</li>
+                </ul>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    const container = document.getElementById('milestones-container');
+    const addButton = document.getElementById('add-milestone');
+    
+    function updateRemoveButtons() {
+        const items = container.querySelectorAll('.milestone-item');
+        items.forEach(item => {
+            const removeBtn = item.querySelector('.remove-milestone');
+            removeBtn.style.display = items.length > 1 ? 'block' : 'none';
+        });
+    }
+    
+    addButton.addEventListener('click', function() {
+        const template = container.querySelector('.milestone-item').cloneNode(true);
+        template.querySelectorAll('input, textarea').forEach(input => {
+            input.value = input.type === 'number' ? '7' : '';
+        });
+        container.appendChild(template);
+        updateRemoveButtons();
+    });
+    
+    container.addEventListener('click', function(e) {
+        if (e.target.classList.contains('remove-milestone') || e.target.closest('.remove-milestone')) {
+            const item = e.target.closest('.milestone-item');
+            item.remove();
+            updateRemoveButtons();
+        }
+    });
+    
+    updateRemoveButtons();
+});
+</script>
+{% endblock %}

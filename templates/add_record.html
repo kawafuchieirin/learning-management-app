@@ -31,6 +31,22 @@
                         <textarea class="form-control" id="content" name="content" rows="3" placeholder="例: Pythonの基本文法を学習" required></textarea>
                     </div>
                     
+                    <div class="mb-3">
+                        <label for="category" class="form-label">カテゴリー <span class="text-danger">*</span></label>
+                        <select class="form-control" id="category" name="category" required>
+                            <option value="">カテゴリーを選択してください</option>
+                            <option value="プログラミング">プログラミング</option>
+                            <option value="数学">数学</option>
+                            <option value="英語">英語</option>
+                            <option value="資格勉強">資格勉強</option>
+                            <option value="読書">読書</option>
+                            <option value="その他">その他</option>
+                        </select>
+                        <small class="form-text text-muted">
+                            学習内容のカテゴリーを選択してください。統計で分析に使用します。
+                        </small>
+                    </div>
+                    
                     <!-- Memo Section -->
                     <div class="card mb-3">
                         <div class="card-header bg-light">
