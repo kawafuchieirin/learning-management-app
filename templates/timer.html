@@ -1,0 +1,462 @@
+{% extends "base.html" %}
+
+{% block title %}学習タイマー - 学習記録管理アプリ{% endblock %}
+
+{% block content %}
+<div class="row">
+    <div class="col-md-12">
+        <h1 class="mb-4 text-center">
+            <i class="fas fa-stopwatch"></i> 学習タイマー
+        </h1>
+    </div>
+</div>
+
+<div class="row justify-content-center">
+    <div class="col-md-8">
+        <div class="card">
+            <div class="card-body text-center">
+                <!-- Timer Display -->
+                <div class="timer-display mb-4">
+                    <div id="timer" class="display-1 text-primary mb-3">00:00:00</div>
+                    <div class="btn-group mb-3" role="group">
+                        <button type="button" class="btn btn-success btn-lg" id="startBtn">
+                            <i class="fas fa-play"></i> 開始
+                        </button>
+                        <button type="button" class="btn btn-warning btn-lg" id="pauseBtn" disabled>
+                            <i class="fas fa-pause"></i> 一時停止
+                        </button>
+                        <button type="button" class="btn btn-danger btn-lg" id="stopBtn" disabled>
+                            <i class="fas fa-stop"></i> 停止
+                        </button>
+                        <button type="button" class="btn btn-secondary btn-lg" id="resetBtn">
+                            <i class="fas fa-redo"></i> リセット
+                        </button>
+                    </div>
+                </div>
+
+                <!-- Study Content Input -->
+                <div class="study-input mb-4">
+                    <h5><i class="fas fa-book"></i> 学習内容</h5>
+                    <input type="text" id="studyContent" class="form-control form-control-lg text-center" 
+                           placeholder="何を学習しますか？例: Python基礎、数学演習など">
+                </div>
+
+                <!-- Preset Timers -->
+                <div class="preset-timers mb-4">
+                    <h6>プリセット時間</h6>
+                    <div class="btn-group" role="group">
+                        <button type="button" class="btn btn-outline-primary preset-btn" data-minutes="25">
+                            25分 (ポモドーロ)
+                        </button>
+                        <button type="button" class="btn btn-outline-primary preset-btn" data-minutes="50">
+                            50分 (大学講義)
+                        </button>
+                        <button type="button" class="btn btn-outline-primary preset-btn" data-minutes="90">
+                            90分 (集中学習)
+                        </button>
+                        <button type="button" class="btn btn-outline-primary preset-btn" data-minutes="120">
+                            2時間 (深い学習)
+                        </button>
+                    </div>
+                </div>
+
+                <!-- Statistics -->
+                <div class="timer-stats">
+                    <div class="row">
+                        <div class="col-md-6">
+                            <div class="card bg-light">
+                                <div class="card-body">
+                                    <h6>今日の学習時間</h6>
+                                    <div id="todayTime" class="h4 text-success">0分</div>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="col-md-6">
+                            <div class="card bg-light">
+                                <div class="card-body">
+                                    <h6>今回のセッション</h6>
+                                    <div id="sessionTime" class="h4 text-primary">0分</div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Session Complete Modal -->
+<div class="modal fade" id="sessionCompleteModal" tabindex="-1">
+    <div class="modal-dialog modal-lg">
+        <div class="modal-content">
+            <div class="modal-header bg-success text-white">
+                <h5 class="modal-title">
+                    <i class="fas fa-check-circle"></i> 学習セッション完了！
+                </h5>
+                <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body">
+                <div class="text-center mb-4">
+                    <div class="display-4 text-success mb-2">🎉</div>
+                    <h4>お疲れさまでした！</h4>
+                    <p class="lead">学習時間: <span id="completedTime" class="text-success"></span></p>
+                </div>
+
+                <form id="sessionForm">
+                    <div class="mb-3">
+                        <label for="sessionContent" class="form-label">学習内容</label>
+                        <input type="text" class="form-control" id="sessionContent" required>
+                    </div>
+                    
+                    <div class="mb-3">
+                        <label for="sessionCategory" class="form-label">カテゴリー</label>
+                        <select class="form-control" id="sessionCategory" required>
+                            <option value="">カテゴリーを選択してください</option>
+                            <option value="プログラミング">プログラミング</option>
+                            <option value="数学">数学</option>
+                            <option value="英語">英語</option>
+                            <option value="資格勉強">資格勉強</option>
+                            <option value="読書">読書</option>
+                            <option value="その他">その他</option>
+                        </select>
+                    </div>
+                    
+                    <div class="row">
+                        <div class="col-md-6">
+                            <div class="mb-3">
+                                <label for="understood" class="form-label">
+                                    <i class="fas fa-lightbulb text-success"></i> 理解できたこと
+                                </label>
+                                <textarea class="form-control" id="understood" rows="3" 
+                                          placeholder="今回の学習で理解できたことを記録しましょう"></textarea>
+                            </div>
+                        </div>
+                        <div class="col-md-6">
+                            <div class="mb-3">
+                                <label for="couldNotDo" class="form-label">
+                                    <i class="fas fa-exclamation-triangle text-warning"></i> できなかったこと
+                                </label>
+                                <textarea class="form-control" id="couldNotDo" rows="3" 
+                                          placeholder="分からなかったことや改善すべき点を記録しましょう"></textarea>
+                            </div>
+                        </div>
+                    </div>
+                </form>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">
+                    後で記録する
+                </button>
+                <button type="button" class="btn btn-success" id="saveSessionBtn">
+                    <i class="fas fa-save"></i> 学習記録を保存
+                </button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<style>
+.timer-display {
+    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    border-radius: 20px;
+    padding: 30px;
+    color: white;
+    margin: 20px 0;
+}
+
+.timer-display #timer {
+    font-family: 'Courier New', monospace;
+    font-weight: bold;
+    text-shadow: 2px 2px 4px rgba(0,0,0,0.3);
+}
+
+.preset-btn {
+    margin: 5px;
+}
+
+.timer-stats .card {
+    transition: transform 0.2s;
+}
+
+.timer-stats .card:hover {
+    transform: translateY(-2px);
+}
+
+@keyframes pulse {
+    0% { transform: scale(1); }
+    50% { transform: scale(1.05); }
+    100% { transform: scale(1); }
+}
+
+.running {
+    animation: pulse 2s infinite;
+}
+
+.notification {
+    position: fixed;
+    top: 20px;
+    right: 20px;
+    z-index: 1050;
+    min-width: 250px;
+}
+</style>
+
+<script>
+class StudyTimer {
+    constructor() {
+        this.seconds = 0;
+        this.interval = null;
+        this.isRunning = false;
+        this.startTime = null;
+        this.totalPausedTime = 0;
+        this.pausedAt = null;
+        
+        this.initializeElements();
+        this.attachEventListeners();
+        this.loadTodayStats();
+        
+        // Request notification permission
+        if ("Notification" in window) {
+            Notification.requestPermission();
+        }
+    }
+    
+    initializeElements() {
+        this.timerDisplay = document.getElementById('timer');
+        this.startBtn = document.getElementById('startBtn');
+        this.pauseBtn = document.getElementById('pauseBtn');
+        this.stopBtn = document.getElementById('stopBtn');
+        this.resetBtn = document.getElementById('resetBtn');
+        this.studyContent = document.getElementById('studyContent');
+        this.sessionTime = document.getElementById('sessionTime');
+        this.todayTime = document.getElementById('todayTime');
+    }
+    
+    attachEventListeners() {
+        this.startBtn.addEventListener('click', () => this.start());
+        this.pauseBtn.addEventListener('click', () => this.pause());
+        this.stopBtn.addEventListener('click', () => this.stop());
+        this.resetBtn.addEventListener('click', () => this.reset());
+        
+        // Preset timer buttons
+        document.querySelectorAll('.preset-btn').forEach(btn => {
+            btn.addEventListener('click', (e) => {
+                const minutes = parseInt(e.target.getAttribute('data-minutes'));
+                this.setTimer(minutes * 60);
+            });
+        });
+        
+        // Save session button
+        document.getElementById('saveSessionBtn').addEventListener('click', () => this.saveSession());
+    }
+    
+    setTimer(seconds) {
+        if (!this.isRunning) {
+            this.seconds = seconds;
+            this.updateDisplay();
+        }
+    }
+    
+    start() {
+        if (!this.studyContent.value.trim()) {
+            alert('学習内容を入力してください');
+            this.studyContent.focus();
+            return;
+        }
+        
+        if (!this.isRunning) {
+            this.isRunning = true;
+            this.startTime = Date.now();
+            if (this.pausedAt) {
+                this.totalPausedTime += Date.now() - this.pausedAt;
+                this.pausedAt = null;
+            }
+            
+            this.interval = setInterval(() => {
+                this.seconds++;
+                this.updateDisplay();
+                this.updateSessionTime();
+            }, 1000);
+            
+            this.updateButtons();
+            this.timerDisplay.parentElement.classList.add('running');
+        }
+    }
+    
+    pause() {
+        if (this.isRunning) {
+            this.isRunning = false;
+            this.pausedAt = Date.now();
+            clearInterval(this.interval);
+            this.updateButtons();
+            this.timerDisplay.parentElement.classList.remove('running');
+        }
+    }
+    
+    stop() {
+        if (this.seconds > 0) {
+            if (this.seconds < 60) {  // Less than 1 minute
+                if (confirm('学習時間が1分未満です。それでも記録しますか？')) {
+                    this.showSessionCompleteModal();
+                } else {
+                    return; // Don't reset if user cancels
+                }
+            } else {
+                this.showSessionCompleteModal();
+            }
+        }
+        // Reset will be handled after session is successfully saved
+    }
+    
+    reset() {
+        this.isRunning = false;
+        this.seconds = 0;
+        this.startTime = null;
+        this.totalPausedTime = 0;
+        this.pausedAt = null;
+        clearInterval(this.interval);
+        this.updateDisplay();
+        this.updateButtons();
+        this.updateSessionTime();
+        this.timerDisplay.parentElement.classList.remove('running');
+    }
+    
+    updateDisplay() {
+        const hours = Math.floor(this.seconds / 3600);
+        const minutes = Math.floor((this.seconds % 3600) / 60);
+        const secs = this.seconds % 60;
+        
+        this.timerDisplay.textContent = 
+            `${hours.toString().padStart(2, '0')}:${minutes.toString().padStart(2, '0')}:${secs.toString().padStart(2, '0')}`;
+    }
+    
+    updateButtons() {
+        this.startBtn.disabled = this.isRunning;
+        this.pauseBtn.disabled = !this.isRunning;
+        this.stopBtn.disabled = !this.isRunning && this.seconds === 0;
+    }
+    
+    updateSessionTime() {
+        const minutes = Math.floor(this.seconds / 60);
+        this.sessionTime.textContent = `${minutes}分`;
+    }
+    
+    showSessionCompleteModal() {
+        const minutes = Math.floor(this.seconds / 60);
+        document.getElementById('completedTime').textContent = `${minutes}分`;
+        document.getElementById('sessionContent').value = this.studyContent.value;
+        
+        const modal = new bootstrap.Modal(document.getElementById('sessionCompleteModal'));
+        modal.show();
+        
+        // Show notification
+        if ("Notification" in window && Notification.permission === "granted") {
+            new Notification("学習セッション完了！", {
+                body: `${minutes}分間お疲れさまでした！`,
+                icon: "/static/favicon.ico"
+            });
+        }
+    }
+    
+    async saveSession() {
+        const content = document.getElementById('sessionContent').value.trim();
+        const category = document.getElementById('sessionCategory').value.trim();
+        const understood = document.getElementById('understood').value.trim();
+        const couldNotDo = document.getElementById('couldNotDo').value.trim();
+        const timeMinutes = Math.floor(this.seconds / 60);
+        
+        console.log('Saving session:', { content, category, timeMinutes, understood, couldNotDo });
+        
+        if (!content) {
+            alert('学習内容を入力してください');
+            return;
+        }
+        
+        if (!category) {
+            alert('カテゴリーを選択してください');
+            return;
+        }
+        
+        if (timeMinutes <= 0) {
+            alert('学習時間が不正です');
+            return;
+        }
+        
+        try {
+            const requestData = {
+                content: content,
+                category: category,
+                time_minutes: timeMinutes,
+                understood: understood,
+                could_not_do: couldNotDo
+            };
+            
+            console.log('Sending request:', requestData);
+            
+            const response = await fetch('/save_timer_session', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                },
+                body: JSON.stringify(requestData)
+            });
+            
+            console.log('Response status:', response.status);
+            
+            if (response.ok) {
+                const result = await response.json();
+                console.log('Success result:', result);
+                
+                const modal = bootstrap.Modal.getInstance(document.getElementById('sessionCompleteModal'));
+                modal.hide();
+                
+                this.showNotification('学習記録が保存されました！', 'success');
+                this.loadTodayStats();
+                
+                // Reset form
+                document.getElementById('sessionForm').reset();
+            } else {
+                const errorData = await response.json();
+                console.error('Server error:', errorData);
+                throw new Error(errorData.error || '保存に失敗しました');
+            }
+        } catch (error) {
+            console.error('Save session error:', error);
+            this.showNotification(`保存中にエラーが発生しました: ${error.message}`, 'error');
+        }
+    }
+    
+    async loadTodayStats() {
+        try {
+            const response = await fetch('/api/today_stats');
+            const stats = await response.json();
+            this.todayTime.textContent = `${stats.total_time_minutes}分`;
+        } catch (error) {
+            console.error('Failed to load today stats:', error);
+        }
+    }
+    
+    showNotification(message, type = 'info') {
+        const alertClass = type === 'success' ? 'alert-success' : 'alert-danger';
+        const notification = document.createElement('div');
+        notification.className = `alert ${alertClass} alert-dismissible fade show notification`;
+        notification.innerHTML = `
+            ${message}
+            <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+        `;
+        
+        document.body.appendChild(notification);
+        
+        setTimeout(() => {
+            notification.remove();
+        }, 5000);
+    }
+}
+
+// Initialize timer when page loads
+document.addEventListener('DOMContentLoaded', function() {
+    new StudyTimer();
+});
+</script>
+{% endblock %}

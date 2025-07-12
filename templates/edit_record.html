@@ -1,0 +1,138 @@
+{% extends "base.html" %}
+
+{% block title %}記録編集 - 学習記録管理アプリ{% endblock %}
+
+{% block content %}
+<div class="row">
+    <div class="col-md-8 offset-md-2">
+        <div class="card">
+            <div class="card-header bg-warning text-dark">
+                <h4 class="mb-0"><i class="fas fa-edit"></i> 学習記録を編集</h4>
+                <small>記録ID: {{ record.record_id }}</small>
+            </div>
+            <div class="card-body">
+                <form method="POST">
+                    <div class="row">
+                        <div class="col-md-6">
+                            <div class="mb-3">
+                                <label for="date" class="form-label">日付 <span class="text-danger">*</span></label>
+                                <input type="date" class="form-control" id="date" name="date" value="{{ record.date }}" required>
+                            </div>
+                        </div>
+                        <div class="col-md-6">
+                            <div class="mb-3">
+                                <label for="time" class="form-label">学習時間（分） <span class="text-danger">*</span></label>
+                                <input type="number" class="form-control" id="time" name="time" min="1" value="{{ record.time }}" required>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <div class="mb-3">
+                        <label for="content" class="form-label">学習内容 <span class="text-danger">*</span></label>
+                        <textarea class="form-control" id="content" name="content" rows="3" required>{{ record.content }}</textarea>
+                    </div>
+                    
+                    <div class="mb-3">
+                        <label for="category" class="form-label">カテゴリー <span class="text-danger">*</span></label>
+                        <select class="form-control" id="category" name="category" required>
+                            <option value="">カテゴリーを選択してください</option>
+                            <option value="プログラミング" {% if record.category == 'プログラミング' %}selected{% endif %}>プログラミング</option>
+                            <option value="数学" {% if record.category == '数学' %}selected{% endif %}>数学</option>
+                            <option value="英語" {% if record.category == '英語' %}selected{% endif %}>英語</option>
+                            <option value="資格勉強" {% if record.category == '資格勉強' %}selected{% endif %}>資格勉強</option>
+                            <option value="読書" {% if record.category == '読書' %}selected{% endif %}>読書</option>
+                            <option value="その他" {% if record.category == 'その他' %}selected{% endif %}>その他</option>
+                        </select>
+                        <small class="form-text text-muted">
+                            学習内容のカテゴリーを選択してください。統計で分析に使用します。
+                        </small>
+                    </div>
+                    
+                    <!-- Memo Section -->
+                    <div class="card mb-3">
+                        <div class="card-header bg-light">
+                            <h6 class="mb-0"><i class="fas fa-sticky-note"></i> メモ機能（振り返り学習）</h6>
+                            <small class="text-muted">以下の項目は任意です。後から振り返りに活用できます。</small>
+                        </div>
+                        <div class="card-body">
+                            <div class="mb-3">
+                                <label for="understood" class="form-label">
+                                    <i class="fas fa-lightbulb text-success"></i> 理解できたこと
+                                    <small class="text-muted">（任意）</small>
+                                </label>
+                                <textarea class="form-control" id="understood" name="understood" rows="3">{{ record.understood if record.understood else '' }}</textarea>
+                            </div>
+                            
+                            <div class="mb-3">
+                                <label for="could_not_do" class="form-label">
+                                    <i class="fas fa-exclamation-triangle text-warning"></i> できなかったこと
+                                    <small class="text-muted">（任意）</small>
+                                </label>
+                                <textarea class="form-control" id="could_not_do" name="could_not_do" rows="3">{{ record.could_not_do if record.could_not_do else '' }}</textarea>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <div class="d-grid gap-2 d-md-flex justify-content-md-end">
+                        <a href="{{ url_for('records') }}" class="btn btn-secondary me-md-2">
+                            <i class="fas fa-times"></i> キャンセル
+                        </a>
+                        <button type="submit" class="btn btn-warning">
+                            <i class="fas fa-save"></i> 変更を保存
+                        </button>
+                    </div>
+                </form>
+            </div>
+        </div>
+        
+        <!-- Record Info -->
+        <div class="card mt-4">
+            <div class="card-header bg-info text-white">
+                <h6 class="mb-0"><i class="fas fa-info-circle"></i> 記録情報</h6>
+            </div>
+            <div class="card-body">
+                <div class="row">
+                    <div class="col-md-6">
+                        <small class="text-muted">作成日時</small>
+                        <div>{{ record.created_at[:19] if record.created_at else '不明' }}</div>
+                    </div>
+                    <div class="col-md-6">
+                        <small class="text-muted">記録元</small>
+                        <div>
+                            {% if record.source == 'timer' %}
+                                <span class="badge bg-success">タイマー</span>
+                            {% else %}
+                                <span class="badge bg-primary">手動入力</span>
+                            {% endif %}
+                        </div>
+                    </div>
+                </div>
+                {% if record.updated_at %}
+                <div class="row mt-2">
+                    <div class="col-md-12">
+                        <small class="text-muted">最終更新</small>
+                        <div>{{ record.updated_at[:19] }}</div>
+                    </div>
+                </div>
+                {% endif %}
+            </div>
+        </div>
+        
+        <!-- Delete Section -->
+        <div class="card mt-4 border-danger">
+            <div class="card-header bg-danger text-white">
+                <h6 class="mb-0"><i class="fas fa-trash"></i> 危険な操作</h6>
+            </div>
+            <div class="card-body">
+                <p class="text-muted">この記録を完全に削除します。削除された記録は復元できません。</p>
+                <form method="POST" action="{{ url_for('delete_record', record_id=record.record_id) }}" 
+                      onsubmit="return confirm('本当にこの記録を削除しますか？この操作は元に戻すことができません。')">
+                    <button type="submit" class="btn btn-outline-danger">
+                        <i class="fas fa-trash"></i> この記録を削除
+                    </button>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

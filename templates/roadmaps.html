@@ -1,0 +1,82 @@
+{% extends "base.html" %}
+
+{% block title %}学習ロードマップ - 学習記録管理アプリ{% endblock %}
+
+{% block content %}
+<div class="row">
+    <div class="col-md-12">
+        <div class="d-flex justify-content-between align-items-center mb-4">
+            <h1><i class="fas fa-road"></i> 学習ロードマップ</h1>
+            <a href="{{ url_for('add_roadmap') }}" class="btn btn-primary">
+                <i class="fas fa-plus"></i> 新しいロードマップを作成
+            </a>
+        </div>
+    </div>
+</div>
+
+{% if roadmaps %}
+    <div class="row">
+        {% for roadmap in roadmaps %}
+            <div class="col-md-6 mb-4">
+                <div class="card h-100">
+                    <div class="card-body">
+                        <h5 class="card-title">
+                            <i class="fas fa-map-signs"></i> {{ roadmap.title }}
+                        </h5>
+                        {% if roadmap.description %}
+                            <p class="card-text text-muted">{{ roadmap.description }}</p>
+                        {% endif %}
+                        
+                        <div class="mb-3">
+                            <small class="text-muted">
+                                <i class="fas fa-calendar"></i> 作成日: {{ roadmap.created_at[:10] }}
+                            </small>
+                        </div>
+                        
+                        <div class="progress mb-3" style="height: 25px;">
+                            <div class="progress-bar bg-success" role="progressbar" 
+                                 style="width: {{ roadmap.progress }}%;" 
+                                 aria-valuenow="{{ roadmap.progress }}" 
+                                 aria-valuemin="0" 
+                                 aria-valuemax="100">
+                                {{ roadmap.progress }}%
+                            </div>
+                        </div>
+                        
+                        <div class="d-flex justify-content-between align-items-center">
+                            <small class="text-muted">
+                                マイルストーン: {{ roadmap.milestones|length }}個
+                            </small>
+                            <div>
+                                <a href="{{ url_for('edit_roadmap', roadmap_id=roadmap.roadmap_id) }}" 
+                                   class="btn btn-sm btn-warning me-1">
+                                    <i class="fas fa-edit"></i>
+                                </a>
+                                <a href="{{ url_for('view_roadmap', roadmap_id=roadmap.roadmap_id) }}" 
+                                   class="btn btn-sm btn-outline-primary">
+                                    詳細 <i class="fas fa-arrow-right"></i>
+                                </a>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        {% endfor %}
+    </div>
+{% else %}
+    <div class="row">
+        <div class="col-md-12">
+            <div class="card">
+                <div class="card-body text-center py-5">
+                    <i class="fas fa-road fa-3x text-muted mb-3"></i>
+                    <h4 class="text-muted">まだロードマップがありません</h4>
+                    <p class="text-muted">学習の目標を設定して、計画的に学習を進めましょう！</p>
+                    <a href="{{ url_for('add_roadmap') }}" class="btn btn-primary">
+                        <i class="fas fa-plus"></i> 最初のロードマップを作成
+                    </a>
+                </div>
+            </div>
+        </div>
+    </div>
+{% endif %}
+{% endblock %}

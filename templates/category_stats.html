@@ -1,0 +1,226 @@
+{% extends "base.html" %}
+
+{% block title %}カテゴリー別集計 - 学習記録管理アプリ{% endblock %}
+
+{% block content %}
+<div class="row">
+    <div class="col-md-12">
+        <div class="d-flex justify-content-between align-items-center mb-4">
+            <h1><i class="fas fa-chart-pie"></i> カテゴリー別集計</h1>
+            <div>
+                <a href="{{ url_for('records') }}" class="btn btn-outline-primary">
+                    <i class="fas fa-list"></i> 全記録へ
+                </a>
+                <a href="{{ url_for('add_record') }}" class="btn btn-primary">
+                    <i class="fas fa-plus"></i> 新しい記録を追加
+                </a>
+            </div>
+        </div>
+    </div>
+</div>
+
+{% if categories %}
+    <!-- Summary Statistics -->
+    <div class="row mb-4">
+        <div class="col-md-4">
+            <div class="card bg-primary text-white">
+                <div class="card-body text-center">
+                    <h5>総学習時間</h5>
+                    <h3>{{ total_time }}分</h3>
+                    <small>{{ categories|length }}カテゴリー</small>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-4">
+            <div class="card bg-success text-white">
+                <div class="card-body text-center">
+                    <h5>今週の学習時間</h5>
+                    <h3>{% set weekly_total = 0 %}{% for cat, data in weekly_data.items() %}{% set weekly_total = weekly_total + data['total_time'] %}{% endfor %}{{ weekly_total }}分</h3>
+                    <small>{{ weekly_data|length }}カテゴリー</small>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-4">
+            <div class="card bg-info text-white">
+                <div class="card-body text-center">
+                    <h5>最も学習したカテゴリー</h5>
+                    <h3>{{ categories[0][0] }}</h3>
+                    <small>{{ categories[0][1]['total_time'] }}分</small>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Category Statistics -->
+    <div class="row">
+        <div class="col-md-12">
+            <div class="card">
+                <div class="card-header">
+                    <h5 class="mb-0">
+                        <i class="fas fa-chart-bar"></i> カテゴリー別詳細統計
+                    </h5>
+                </div>
+                <div class="card-body">
+                    <div class="table-responsive">
+                        <table class="table table-striped">
+                            <thead class="table-dark">
+                                <tr>
+                                    <th>カテゴリー</th>
+                                    <th>総学習時間</th>
+                                    <th>記録数</th>
+                                    <th>平均時間/回</th>
+                                    <th>全体に占める割合</th>
+                                    <th>今週の時間</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                {% for category, data in categories %}
+                                    <tr>
+                                        <td>
+                                            <span class="fw-bold">{{ category }}</span>
+                                        </td>
+                                        <td>
+                                            <span class="badge bg-primary">{{ data['total_time'] }}分</span>
+                                        </td>
+                                        <td>
+                                            <span class="badge bg-secondary">{{ data['count'] }}件</span>
+                                        </td>
+                                        <td>
+                                            <span class="badge bg-info">{{ data['avg_time'] }}分</span>
+                                        </td>
+                                        <td>
+                                            <div class="progress" style="height: 20px;">
+                                                <div class="progress-bar" role="progressbar" 
+                                                     style="width: {{ data['percentage'] }}%"
+                                                     aria-valuenow="{{ data['percentage'] }}" 
+                                                     aria-valuemin="0" aria-valuemax="100">
+                                                    {{ data['percentage'] }}%
+                                                </div>
+                                            </div>
+                                        </td>
+                                        <td>
+                                            {% if weekly_data[category] %}
+                                                <span class="badge bg-success">{{ weekly_data[category]['total_time'] }}分</span>
+                                            {% else %}
+                                                <span class="text-muted">-</span>
+                                            {% endif %}
+                                        </td>
+                                    </tr>
+                                {% endfor %}
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Category Details -->
+    <div class="row mt-4">
+        {% for category, data in categories %}
+            <div class="col-md-6 mb-4">
+                <div class="card">
+                    <div class="card-header">
+                        <h6 class="mb-0">
+                            <i class="fas fa-folder"></i> {{ category }}
+                            <span class="badge bg-primary ms-2">{{ data['total_time'] }}分</span>
+                        </h6>
+                    </div>
+                    <div class="card-body">
+                        <div class="row">
+                            <div class="col-6">
+                                <small class="text-muted">総記録数</small>
+                                <div class="h5">{{ data['count'] }}件</div>
+                            </div>
+                            <div class="col-6">
+                                <small class="text-muted">平均時間/回</small>
+                                <div class="h5">{{ data['avg_time'] }}分</div>
+                            </div>
+                        </div>
+                        
+                        <!-- Recent records for this category -->
+                        <div class="mt-3">
+                            <small class="text-muted">最近の記録</small>
+                            <div class="mt-2" style="max-height: 200px; overflow-y: auto;">
+                                {% for record in data['records'][:5] %}
+                                    <div class="border-bottom py-2">
+                                        <div class="d-flex justify-content-between align-items-start">
+                                            <div class="flex-grow-1">
+                                                <small class="text-muted">{{ record.date }}</small>
+                                                <div class="small">{{ record.content }}</div>
+                                            </div>
+                                            <div class="d-flex align-items-center">
+                                                <span class="badge bg-info me-2">{{ record.time }}分</span>
+                                                <a href="{{ url_for('edit_record', record_id=record.record_id) }}" 
+                                                   class="btn btn-sm btn-outline-warning me-1" title="編集">
+                                                    <i class="fas fa-edit"></i>
+                                                </a>
+                                            </div>
+                                        </div>
+                                    </div>
+                                {% endfor %}
+                                {% if data['records']|length > 5 %}
+                                    <div class="text-center pt-2">
+                                        <small class="text-muted">...他{{ data['records']|length - 5 }}件</small>
+                                    </div>
+                                {% endif %}
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        {% endfor %}
+    </div>
+
+    <!-- Weekly Comparison -->
+    <div class="row mt-4">
+        <div class="col-md-12">
+            <div class="card">
+                <div class="card-header">
+                    <h5 class="mb-0">
+                        <i class="fas fa-calendar-week"></i> 今週の学習状況
+                    </h5>
+                </div>
+                <div class="card-body">
+                    {% if weekly_data %}
+                        <div class="row">
+                            {% for category, data in weekly_data.items() %}
+                                <div class="col-md-3 mb-3">
+                                    <div class="card bg-light">
+                                        <div class="card-body text-center">
+                                            <h6>{{ category }}</h6>
+                                            <h4 class="text-primary">{{ data['total_time'] }}分</h4>
+                                            <small class="text-muted">{{ data['count'] }}回</small>
+                                        </div>
+                                    </div>
+                                </div>
+                            {% endfor %}
+                        </div>
+                    {% else %}
+                        <div class="text-center py-3">
+                            <i class="fas fa-calendar-times fa-2x text-muted mb-2"></i>
+                            <p class="text-muted">今週はまだ学習記録がありません</p>
+                        </div>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+    </div>
+
+{% else %}
+    <div class="row">
+        <div class="col-md-12">
+            <div class="card">
+                <div class="card-body text-center py-5">
+                    <i class="fas fa-chart-pie fa-3x text-muted mb-3"></i>
+                    <h4 class="text-muted">まだ学習記録がありません</h4>
+                    <p class="text-muted">カテゴリー別集計を表示するために、学習記録を追加しましょう！</p>
+                    <a href="{{ url_for('add_record') }}" class="btn btn-primary">
+                        <i class="fas fa-plus"></i> 記録を追加
+                    </a>
+                </div>
+            </div>
+        </div>
+    </div>
+{% endif %}
+{% endblock %}
