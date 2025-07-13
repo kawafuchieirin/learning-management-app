@@ -8,6 +8,9 @@
         <div class="d-flex justify-content-between align-items-center mb-4">
             <h1><i class="fas fa-road"></i> {{ roadmap.title }}</h1>
             <div>
+                <a href="{{ url_for('timer') }}?roadmap_id={{ roadmap.roadmap_id }}" class="btn btn-success me-2">
+                    <i class="fas fa-stopwatch"></i> タイマー開始
+                </a>
                 <a href="{{ url_for('edit_roadmap', roadmap_id=roadmap.roadmap_id) }}" class="btn btn-warning me-2">
                     <i class="fas fa-edit"></i> 編集
                 </a>
@@ -19,40 +22,53 @@
     </div>
 </div>
 
-<div class="row mb-4">
-    <div class="col-md-8">
-        <div class="card">
-            <div class="card-body">
+<!-- Compact Overview Card -->
+<div class="card mb-4">
+    <div class="card-body">
+        <div class="row align-items-center">
+            <div class="col-md-5">
                 {% if roadmap.description %}
-                    <p class="lead">{{ roadmap.description }}</p>
+                    <p class="mb-2">{{ roadmap.description }}</p>
                 {% endif %}
-                
                 {% if roadmap.goal %}
-                    <div class="alert alert-info">
-                        <strong><i class="fas fa-flag-checkered"></i> 最終目標:</strong> {{ roadmap.goal }}
-                    </div>
+                    <p class="mb-1"><strong><i class="fas fa-flag-checkered text-info"></i> 目標:</strong> {{ roadmap.goal }}</p>
                 {% endif %}
-                
-                <div class="mb-3">
-                    <small class="text-muted">
-                        <i class="fas fa-calendar"></i> 作成日: {{ roadmap.created_at[:10] }}
-                    </small>
-                </div>
+                <small class="text-muted"><i class="fas fa-calendar"></i> {{ roadmap.created_at[:10] }}</small>
             </div>
-        </div>
-    </div>
-    
-    <div class="col-md-4">
-        <div class="card bg-primary text-white">
-            <div class="card-body text-center">
-                <h5 class="card-title">進捗状況</h5>
-                <div class="display-1">{{ roadmap.progress }}%</div>
-                <div class="progress bg-white mt-3" style="height: 30px;">
-                    <div class="progress-bar bg-success" role="progressbar" 
-                         style="width: {{ roadmap.progress }}%;" 
-                         aria-valuenow="{{ roadmap.progress }}" 
-                         aria-valuemin="0" 
-                         aria-valuemax="100">
+            <div class="col-md-7">
+                <div class="row">
+                    <div class="col-6 text-center">
+                        <div class="h3 text-primary mb-1">{{ roadmap.progress }}%</div>
+                        <small class="text-muted">完了進捗</small>
+                        <div class="progress mt-2" style="height: 8px;">
+                            <div class="progress-bar bg-primary" style="width: {{ roadmap.progress }}%;"></div>
+                        </div>
+                    </div>
+                    <div class="col-6 text-center">
+                        <div class="h3 text-success mb-1">{{ roadmap.time_progress }}%</div>
+                        <small class="text-muted">時間進捗</small>
+                        <div class="progress mt-2" style="height: 8px;">
+                            <div class="progress-bar bg-success" style="width: {{ roadmap.time_progress }}%;"></div>
+                        </div>
+                    </div>
+                </div>
+                <hr class="my-3">
+                <div class="row text-center">
+                    <div class="col-3">
+                        <strong>{{ roadmap.milestones|length }}</strong><br>
+                        <small class="text-muted">マイルストーン</small>
+                    </div>
+                    <div class="col-3">
+                        <strong>{{ "%.1f"|format(roadmap.total_time_hours) }}h</strong><br>
+                        <small class="text-muted">実績時間</small>
+                    </div>
+                    <div class="col-3">
+                        <strong>{{ roadmap.total_estimated_hours }}h</strong><br>
+                        <small class="text-muted">予定時間</small>
+                    </div>
+                    <div class="col-3">
+                        <strong>{{ roadmap.related_records_count }}</strong><br>
+                        <small class="text-muted">セッション</small>
                     </div>
                 </div>
             </div>
@@ -70,40 +86,61 @@
                     <div class="card mb-3 {% if milestone.completed %}border-success{% endif %}">
                         <div class="card-body">
                             <div class="row align-items-center">
-                                <div class="col-md-1 text-center">
-                                    <div class="form-check">
-                                        <input class="form-check-input milestone-checkbox" 
-                                               type="checkbox" 
-                                               id="milestone-{{ milestone.id }}"
-                                               data-roadmap-id="{{ roadmap.roadmap_id }}"
-                                               data-milestone-id="{{ milestone.id }}"
-                                               {% if milestone.completed %}checked{% endif %}>
-                                    </div>
+                                <div class="col-1">
+                                    <input class="form-check-input milestone-checkbox" 
+                                           type="checkbox" 
+                                           id="milestone-{{ milestone.id }}"
+                                           data-roadmap-id="{{ roadmap.roadmap_id }}"
+                                           data-milestone-id="{{ milestone.id }}"
+                                           {% if milestone.completed %}checked{% endif %}
+                                           style="width: 1.2em; height: 1.2em;">
                                 </div>
-                                <div class="col-md-8">
-                                    <h5 class="mb-1 {% if milestone.completed %}text-success text-decoration-line-through{% endif %}">
+                                <div class="col-6">
+                                    <h6 class="mb-1 {% if milestone.completed %}text-success text-decoration-line-through{% endif %}">
                                         {{ milestone.title }}
-                                    </h5>
+                                    </h6>
                                     {% if milestone.description %}
-                                        <p class="text-muted mb-1">{{ milestone.description }}</p>
+                                        <small class="text-muted d-block mb-1">{{ milestone.description }}</small>
                                     {% endif %}
-                                    <small class="text-muted">
-                                        <i class="fas fa-clock"></i> 予定: {{ milestone.estimated_days }}日
-                                        {% if milestone.completed and milestone.completed_date %}
-                                            | <i class="fas fa-check-circle text-success"></i> 
-                                            完了: {{ milestone.completed_date[:10] }}
+                                    <div class="d-flex gap-2 flex-wrap">
+                                        <span class="badge bg-primary">{{ milestone.estimated_hours }}h予定</span>
+                                        {% if milestone_stats[milestone.id] %}
+                                            {% set actual_hours = (milestone_stats[milestone.id].time_spent|float) / 60 %}
+                                            <span class="badge bg-info">{{ "%.1f"|format(actual_hours) }}h実績</span>
+                                            {% if actual_hours > 0 %}
+                                                {% if actual_hours <= (milestone.estimated_hours|float) %}
+                                                    <span class="badge bg-success">予定内</span>
+                                                {% else %}
+                                                    <span class="badge bg-warning">超過</span>
+                                                {% endif %}
+                                            {% endif %}
+                                        {% else %}
+                                            <span class="badge bg-secondary">0h実績</span>
                                         {% endif %}
-                                    </small>
+                                    </div>
+                                    {% if milestone.completed and milestone.completed_date %}
+                                        <small class="text-muted"><i class="fas fa-calendar-check"></i> {{ milestone.completed_date[:10] }}</small>
+                                    {% endif %}
                                 </div>
-                                <div class="col-md-3 text-end">
-                                    {% if milestone.completed %}
-                                        <span class="badge bg-success">
-                                            <i class="fas fa-check"></i> 完了
-                                        </span>
+                                <div class="col-3">
+                                    {% if milestone_stats[milestone.id] and milestone_stats[milestone.id].time_spent > 0 %}
+                                        <div class="progress" style="height: 6px;">
+                                            <div class="progress-bar bg-info" style="width: {{ milestone_stats[milestone.id].progress_by_time }}%;" title="時間進捗: {{ milestone_stats[milestone.id].progress_by_time }}%"></div>
+                                        </div>
+                                        <small class="text-muted">{{ milestone_stats[milestone.id].progress_by_time }}% 進捗</small>
                                     {% else %}
-                                        <span class="badge bg-secondary">
-                                            <i class="fas fa-hourglass-half"></i> 進行中
-                                        </span>
+                                        <small class="text-muted">未開始</small>
+                                    {% endif %}
+                                </div>
+                                <div class="col-2 text-end">
+                                    <a href="{{ url_for('timer') }}?roadmap_id={{ roadmap.roadmap_id }}&milestone_id={{ milestone.id }}" 
+                                       class="btn btn-sm btn-outline-success mb-1">
+                                        <i class="fas fa-stopwatch"></i>
+                                    </a>
+                                    {% if milestone.completed %}
+                                        <div><span class="badge bg-success">完了</span></div>
+                                    {% else %}
+                                        <div><span class="badge bg-secondary">進行中</span></div>
                                     {% endif %}
                                 </div>
                             </div>
@@ -116,8 +153,49 @@
                 <i class="fas fa-exclamation-triangle"></i> マイルストーンが設定されていません。
             </div>
         {% endif %}
+        
     </div>
 </div>
+
+<!-- Related Study Records (Compact) -->
+{% if related_records %}
+<div class="card mt-4">
+    <div class="card-header">
+        <h6 class="mb-0"><i class="fas fa-book-open"></i> 関連する学習記録 (最新5件)</h6>
+    </div>
+    <div class="card-body p-3">
+        {% for record in related_records[:5] %}
+            <div class="d-flex justify-content-between align-items-center {% if not loop.last %}border-bottom{% endif %} pb-2 mb-2">
+                <div class="flex-grow-1">
+                    <div class="fw-bold">{{ record.content }}</div>
+                    <small class="text-muted">{{ record.date }} | 
+                        {% if record.milestone_id %}
+                            {% set milestone_title = roadmap.milestones | selectattr('id', 'equalto', record.milestone_id) | map(attribute='title') | first %}
+                            {{ milestone_title or '不明なマイルストーン' }}
+                        {% else %}
+                            一般学習
+                        {% endif %}
+                    </small>
+                </div>
+                <div class="text-end">
+                    <span class="badge bg-primary">{{ record.time }}分</span>
+                    {% if record.understood %}
+                        <span class="badge bg-success ms-1" title="{{ record.understood }}">理解</span>
+                    {% endif %}
+                    {% if record.could_not_do %}
+                        <span class="badge bg-warning ms-1" title="{{ record.could_not_do }}">課題</span>
+                    {% endif %}
+                </div>
+            </div>
+        {% endfor %}
+        {% if roadmap.related_records_count > 5 %}
+            <div class="text-center mt-2">
+                <small class="text-muted">他 {{ roadmap.related_records_count - 5 }} 件の記録があります</small>
+            </div>
+        {% endif %}
+    </div>
+</div>
+{% endif %}
 
 <style>
 .timeline .card {
