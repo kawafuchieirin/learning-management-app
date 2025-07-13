@@ -296,17 +296,20 @@ class StudyTimer {
     
     stop() {
         if (this.seconds > 0) {
+            const totalSeconds = this.seconds; // Save the seconds before reset
             if (this.seconds < 60) {  // Less than 1 minute
                 if (confirm('学習時間が1分未満です。それでも記録しますか？')) {
-                    this.showSessionCompleteModal();
+                    this.showSessionCompleteModal(totalSeconds);
+                    this.reset();
                 } else {
                     return; // Don't reset if user cancels
                 }
             } else {
-                this.showSessionCompleteModal();
+                this.showSessionCompleteModal(totalSeconds);
+                this.reset();
             }
         }
-        // Reset will be handled after session is successfully saved
+
     }
     
     reset() {
@@ -342,8 +345,14 @@ class StudyTimer {
         this.sessionTime.textContent = `${minutes}分`;
     }
     
-    showSessionCompleteModal() {
-        const minutes = Math.floor(this.seconds / 60);
+    showSessionCompleteModal(totalSeconds = null) {
+        // Use passed seconds or current seconds
+        const seconds = totalSeconds !== null ? totalSeconds : this.seconds;
+        const minutes = Math.floor(seconds / 60);
+        
+        // Store the seconds for later use in saveSession
+        this.completedSeconds = seconds;
+        
         document.getElementById('completedTime').textContent = `${minutes}分`;
         document.getElementById('sessionContent').value = this.studyContent.value;
         
@@ -364,7 +373,8 @@ class StudyTimer {
         const category = document.getElementById('sessionCategory').value.trim();
         const understood = document.getElementById('understood').value.trim();
         const couldNotDo = document.getElementById('couldNotDo').value.trim();
-        const timeMinutes = Math.floor(this.seconds / 60);
+        // Use the stored completed seconds instead of current seconds
+        const timeMinutes = Math.floor(this.completedSeconds / 60);
         
         console.log('Saving session:', { content, category, timeMinutes, understood, couldNotDo });
         
