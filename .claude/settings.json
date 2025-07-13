@@ -6,7 +6,7 @@
         "hooks": [
           {
             "type": "command",
-            "command": "terminal-notifier -title \"Claude Code\" -message \"Waiting for your response...\" -sound Funk"
+            "command": "command -v terminal-notifier >/dev/null 2>&1 && terminal-notifier -title \"Claude Code\" -message \"Waiting for your response...\" -sound Funk || echo \"📢 Claude Code: Waiting for your response...\""
           }
         ]
       }
