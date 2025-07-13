@@ -44,9 +44,9 @@
                                            placeholder="例: Python基礎を習得">
                                 </div>
                                 <div class="col-md-3">
-                                    <label class="form-label">予定日数</label>
+                                    <label class="form-label">予定時間</label>
                                     <input type="number" class="form-control" name="milestone_duration[]" 
-                                           value="7" min="1">
+                                           value="8" min="1">
                                 </div>
                                 <div class="col-md-3 d-flex align-items-end">
                                     <button type="button" class="btn btn-sm btn-danger remove-milestone" style="display:none;">
@@ -112,7 +112,7 @@ document.addEventListener('DOMContentLoaded', function() {
     addButton.addEventListener('click', function() {
         const template = container.querySelector('.milestone-item').cloneNode(true);
         template.querySelectorAll('input, textarea').forEach(input => {
-            input.value = input.type === 'number' ? '7' : '';
+            input.value = input.type === 'number' ? '8' : '';
         });
         container.appendChild(template);
         updateRemoveButtons();

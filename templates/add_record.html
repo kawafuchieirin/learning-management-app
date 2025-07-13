@@ -31,19 +31,47 @@
                         <textarea class="form-control" id="content" name="content" rows="3" placeholder="例: Pythonの基本文法を学習" required></textarea>
                     </div>
                     
-                    <div class="mb-3">
-                        <label for="category" class="form-label">カテゴリー <span class="text-danger">*</span></label>
-                        <select class="form-control" id="category" name="category" required>
-                            <option value="">カテゴリーを選択してください</option>
-                            <option value="プログラミング">プログラミング</option>
-                            <option value="数学">数学</option>
-                            <option value="英語">英語</option>
-                            <option value="資格勉強">資格勉強</option>
-                            <option value="読書">読書</option>
-                            <option value="その他">その他</option>
+                    <div class="row">
+                        <div class="col-md-6">
+                            <div class="mb-3">
+                                <label for="category" class="form-label">カテゴリー <span class="text-danger">*</span></label>
+                                <select class="form-control" id="category" name="category" required>
+                                    <option value="">カテゴリーを選択してください</option>
+                                    <option value="プログラミング">プログラミング</option>
+                                    <option value="数学">数学</option>
+                                    <option value="英語">英語</option>
+                                    <option value="資格勉強">資格勉強</option>
+                                    <option value="読書">読書</option>
+                                    <option value="その他">その他</option>
+                                </select>
+                                <small class="form-text text-muted">
+                                    学習内容のカテゴリーを選択してください。
+                                </small>
+                            </div>
+                        </div>
+                        <div class="col-md-6">
+                            <div class="mb-3">
+                                <label for="roadmap_id" class="form-label">ロードマップ <small class="text-muted">（任意）</small></label>
+                                <select class="form-control" id="roadmap_id" name="roadmap_id">
+                                    <option value="">ロードマップを選択（任意）</option>
+                                    {% for roadmap in roadmaps %}
+                                        <option value="{{ roadmap.roadmap_id }}">{{ roadmap.title }}</option>
+                                    {% endfor %}
+                                </select>
+                                <small class="form-text text-muted">
+                                    この学習がロードマップの一部の場合は選択してください。
+                                </small>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <div class="mb-3" id="milestone-section" style="display: none;">
+                        <label for="milestone_id" class="form-label">マイルストーン <small class="text-muted">（任意）</small></label>
+                        <select class="form-control" id="milestone_id" name="milestone_id">
+                            <option value="">マイルストーンを選択（任意）</option>
                         </select>
                         <small class="form-text text-muted">
-                            学習内容のカテゴリーを選択してください。統計で分析に使用します。
+                            具体的にどのマイルストーンに関連する学習かを選択してください。
                         </small>
                     </div>
                     
@@ -129,19 +157,72 @@
     // Set today's date as default
     document.getElementById('date').valueAsDate = new Date();
     
+    // Roadmap data for milestone loading
+    const roadmapsData = {
+        {% for roadmap in roadmaps %}
+        "{{ roadmap.roadmap_id }}": {
+            "title": "{{ roadmap.title }}",
+            "milestones": [
+                {% for milestone in roadmap.milestones %}
+                {
+                    "id": "{{ milestone.id }}",
+                    "title": "{{ milestone.title }}",
+                    "completed": {{ "true" if milestone.completed else "false" }}
+                }{% if not loop.last %},{% endif %}
+                {% endfor %}
+            ]
+        }{% if not loop.last %},{% endif %}
+        {% endfor %}
+    };
+    
+    // Handle roadmap selection change
+    document.getElementById('roadmap_id').addEventListener('change', function() {
+        const roadmapId = this.value;
+        const milestoneSection = document.getElementById('milestone-section');
+        const milestoneSelect = document.getElementById('milestone_id');
+        
+        if (roadmapId && roadmapsData[roadmapId]) {
+            // Show milestone section
+            milestoneSection.style.display = 'block';
+            
+            // Clear and populate milestone options
+            milestoneSelect.innerHTML = '<option value="">マイルストーンを選択（任意）</option>';
+            
+            roadmapsData[roadmapId].milestones.forEach(milestone => {
+                const option = document.createElement('option');
+                option.value = milestone.id;
+                option.textContent = milestone.title + (milestone.completed ? ' ✓' : '');
+                milestoneSelect.appendChild(option);
+            });
+        } else {
+            // Hide milestone section
+            milestoneSection.style.display = 'none';
+            milestoneSelect.innerHTML = '<option value="">マイルストーンを選択（任意）</option>';
+        }
+    });
+    
     // Auto-save to localStorage
     const form = document.querySelector('form');
-    const inputs = form.querySelectorAll('input, textarea');
+    const inputs = form.querySelectorAll('input, textarea, select');
     
     inputs.forEach(input => {
         // Load saved values
         const savedValue = localStorage.getItem(`form_${input.name}`);
         if (savedValue && input.type !== 'date') {
             input.value = savedValue;
+            // Trigger change event for roadmap selection
+            if (input.name === 'roadmap_id') {
+                input.dispatchEvent(new Event('change'));
+            }
         }
         
         // Save on input
         input.addEventListener('input', () => {
+            localStorage.setItem(`form_${input.name}`, input.value);
+        });
+        
+        // Save on change for select elements
+        input.addEventListener('change', () => {
             localStorage.setItem(`form_${input.name}`, input.value);
         });
     });

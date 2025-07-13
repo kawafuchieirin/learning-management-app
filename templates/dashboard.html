@@ -5,42 +5,152 @@
 {% block content %}
 <h1 class="mb-4">学習ダッシュボード</h1>
 
+<!-- Motivational Message -->
+<div class="alert alert-info mb-4" style="background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); border: none; color: white;">
+    <div class="d-flex align-items-center">
+        <div class="me-3" style="font-size: 2rem;">🎆</div>
+        <div>
+            <h5 class="mb-1" style="color: white;">今日のメッセージ</h5>
+            <p class="mb-0" style="font-size: 1.1rem;">{{ motivational_message }}</p>
+        </div>
+    </div>
+</div>
+
+<!-- Level and Experience -->
+<div class="row mb-4">
+    <div class="col-md-4">
+        <div class="card text-center" style="background: linear-gradient(135deg, #ffecd2 0%, #fcb69f 100%); border: none;">
+            <div class="card-body">
+                <div style="font-size: 3rem; margin-bottom: 10px;">🏆</div>
+                <h3 class="text-primary">Level {{ level_info.level }}</h3>
+                <p class="mb-2">{{ level_info.experience }} XP</p>
+                <div class="progress mb-2" style="height: 10px;">
+                    <div class="progress-bar bg-warning" role="progressbar" 
+                         style="width: {{ level_info.progress_percent }}%;"></div>
+                </div>
+                <small class="text-muted">{{ level_info.xp_current_level }}/{{ level_info.xp_for_next_level }} XP</small>
+            </div>
+        </div>
+    </div>
+    <div class="col-md-4">
+        <div class="card text-center" style="background: linear-gradient(135deg, #a8edea 0%, #fed6e3 100%); border: none;">
+            <div class="card-body">
+                <div style="font-size: 3rem; margin-bottom: 10px;">🔥</div>
+                <h3 class="text-danger">{{ streak }}日</h3>
+                <p class="mb-0">連続学習ストリーク</p>
+                {% if streak >= 7 %}
+                    <small class="text-success">素晴らしい継続力！</small>
+                {% elif streak >= 3 %}
+                    <small class="text-info">いいペースです！</small>
+                {% else %}
+                    <small class="text-muted">毎日コツコツと</small>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+    <div class="col-md-4">
+        <div class="card" style="background: linear-gradient(135deg, #d299c2 0%, #fef9d7 100%); border: none;">
+            <div class="card-body">
+                <h5 class="text-center mb-3">🏅 達成バッジ</h5>
+                {% if badges %}
+                    <div class="d-flex flex-wrap justify-content-center gap-2">
+                        {% for badge in badges[:4] %}
+                            <span class="badge bg-light text-dark p-2" style="border: 2px solid #007bff;" 
+                                  title="{{ badge.description }}">
+                                {{ badge.icon }} {{ badge.name }}
+                            </span>
+                        {% endfor %}
+                        {% if badges|length > 4 %}
+                            <span class="badge bg-secondary">+{{ badges|length - 4 }}</span>
+                        {% endif %}
+                    </div>
+                {% else %}
+                    <p class="text-center text-muted mb-0">学習でバッジを獲得しよう！</p>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+</div>
+
 <!-- Main Stats -->
 <div class="row mb-4">
     <div class="col-md-6">
         <div class="card">
             <div class="card-body">
-                <h5>学習時間</h5>
-                <p class="mb-1">今週: <strong>{{ week_total_time }} 分</strong></p>
-                <p class="mb-0">全期間: <strong>{{ all_time_total }} 分</strong> ({{ total_days }}日間)</p>
+                <h5><i class="fas fa-clock text-primary"></i> 学習時間</h5>
+                <p class="mb-1">今週: <strong class="text-success">{{ week_total_time }} 分</strong></p>
+                <p class="mb-0">全期間: <strong class="text-info">{{ all_time_total }} 分</strong> ({{ total_days }}日間)</p>
+                <small class="text-muted">平均: {{ avg_time_per_day }}分/日</small>
             </div>
         </div>
     </div>
     <div class="col-md-6">
         <div class="card">
             <div class="card-body">
-                <h5>学習成果</h5>
-                <p class="mb-1">理解できたこと: <strong>{{ understood_items|length }} 項目</strong></p>
-                <p class="mb-0">改善すべきこと: <strong>{{ could_not_do_items|length }} 項目</strong></p>
+                <h5><i class="fas fa-lightbulb text-warning"></i> 学習成果</h5>
+                <p class="mb-1">理解できたこと: <strong class="text-success">{{ understood_items|length }} 項目</strong></p>
+                <p class="mb-0">改善すべきこと: <strong class="text-warning">{{ could_not_do_items|length }} 項目</strong></p>
             </div>
+        </div>
+    </div>
+</div>
+
+<!-- Growth Chart -->
+<div class="card mb-4">
+    <div class="card-header bg-info text-white">
+        <h5 class="mb-0"><i class="fas fa-chart-line"></i> 成長グラフ（30日間）</h5>
+    </div>
+    <div class="card-body">
+        <div class="row mb-3">
+            <div class="col-md-8">
+                <canvas id="growthChart" width="400" height="200"></canvas>
+            </div>
+            <div class="col-md-4">
+                <div class="card bg-light h-100">
+                    <div class="card-body">
+                        <h6 class="card-title"><i class="fas fa-lightbulb text-warning"></i> 学習インサイト</h6>
+                        {% if insights.best_day %}
+                            <p class="mb-2"><strong>最高の曜日:</strong> {{ insights.best_day }}</p>
+                        {% endif %}
+                        <p class="mb-2"><strong>平均セッション:</strong> {{ insights.avg_session }}分</p>
+                        <p class="mb-2"><strong>総セッション数:</strong> {{ insights.total_sessions }}回</p>
+                        <div class="mb-0">
+                            <strong>最近の傾向:</strong>
+                            {% if insights.improvement_trend == 'improving' %}
+                                <span class="badge bg-success"><i class="fas fa-arrow-up"></i> 向上中</span>
+                            {% elif insights.improvement_trend == 'declining' %}
+                                <span class="badge bg-warning"><i class="fas fa-arrow-down"></i> 低下</span>
+                            {% else %}
+                                <span class="badge bg-info"><i class="fas fa-minus"></i> 安定</span>
+                            {% endif %}
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+        <div class="text-center">
+            <small class="text-muted">
+                <i class="fas fa-info-circle"></i> 青線: 日別学習時間 | 緑線: 累積学習時間 | オレンジ線: 7日間平均
+            </small>
         </div>
     </div>
 </div>
 
 <!-- Recent Records -->
 <div class="card mb-4">
-    <div class="card-header">
-        <h5 class="mb-0">最近の学習記録</h5>
+    <div class="card-header bg-primary text-white">
+        <h5 class="mb-0"><i class="fas fa-history"></i> 最近の学習記録</h5>
     </div>
     <div class="card-body">
         {% if recent_records %}
             <div class="table-responsive">
-                <table class="table table-sm">
-                    <thead>
+                <table class="table table-hover">
+                    <thead class="table-light">
                         <tr>
                             <th>日付</th>
                             <th>内容</th>
                             <th>時間</th>
+                            <th>状態</th>
                         </tr>
                     </thead>
                     <tbody>
@@ -48,32 +158,198 @@
                             <tr>
                                 <td>{{ record.date }}</td>
                                 <td>{{ record.content }}</td>
-                                <td>{{ record.time }}分</td>
+                                <td><span class="badge bg-primary">{{ record.time }}分</span></td>
+                                <td>
+                                    {% if record.understood %}
+                                        <i class="fas fa-check-circle text-success" title="理解できたことあり"></i>
+                                    {% endif %}
+                                    {% if record.could_not_do %}
+                                        <i class="fas fa-exclamation-triangle text-warning" title="改善点あり"></i>
+                                    {% endif %}
+                                </td>
                             </tr>
                         {% endfor %}
                     </tbody>
                 </table>
             </div>
-            <a href="{{ url_for('records') }}" class="btn btn-sm btn-outline-primary">すべての記録を見る</a>
+            <a href="{{ url_for('records') }}" class="btn btn-outline-primary">
+                <i class="fas fa-list"></i> すべての記録を見る
+            </a>
         {% else %}
-            <p class="text-muted mb-0">まだ学習記録がありません。</p>
+            <div class="text-center py-4">
+                <i class="fas fa-book-open fa-3x text-muted mb-3"></i>
+                <p class="text-muted mb-3">まだ学習記録がありません。</p>
+                <a href="{{ url_for('add_record') }}" class="btn btn-primary">
+                    <i class="fas fa-plus"></i> 最初の記録を作成
+                </a>
+            </div>
         {% endif %}
     </div>
 </div>
 
-<!-- Actions -->
-<div class="d-flex gap-2 flex-wrap">
-    <a href="{{ url_for('add_record') }}" class="btn btn-primary">
-        記録を追加
-    </a>
-    <a href="{{ url_for('timer') }}" class="btn btn-outline-primary">
-        学習タイマー
-    </a>
-    <a href="{{ url_for('memo_insights') }}" class="btn btn-outline-primary">
-        メモ振り返り
-    </a>
-    <a href="{{ url_for('roadmaps') }}" class="btn btn-outline-primary">
-        ロードマップ
-    </a>
+
+<!-- Achievement Details Modal (triggered by clicking badges) -->
+<div class="modal fade" id="achievementModal" tabindex="-1">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header bg-primary text-white">
+                <h5 class="modal-title">🏅 達成バッジ一覧</h5>
+                <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body">
+                {% if badges %}
+                    <div class="row g-3">
+                        {% for badge in badges %}
+                            <div class="col-md-6">
+                                <div class="card border-primary">
+                                    <div class="card-body text-center">
+                                        <div style="font-size: 2rem;">{{ badge.icon }}</div>
+                                        <h6 class="card-title">{{ badge.name }}</h6>
+                                        <p class="card-text small text-muted">{{ badge.description }}</p>
+                                    </div>
+                                </div>
+                            </div>
+                        {% endfor %}
+                    </div>
+                {% else %}
+                    <p class="text-center text-muted">まだバッジを獲得していません。学習を続けて特別なバッジを手に入れましょう！</p>
+                {% endif %}
+            </div>
+        </div>
+    </div>
 </div>
+
+<style>
+.card {
+    transition: transform 0.2s;
+}
+.card:hover {
+    transform: translateY(-2px);
+}
+.btn:hover {
+    transform: translateY(-1px);
+}
+</style>
+
+<!-- Chart.js CDN -->
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+
+<script>
+// Chart data from backend
+const chartData = {
+    labels: {{ chart_data.labels | tojson }},
+    dailyTime: {{ chart_data.daily_time | tojson }},
+    cumulativeTime: {{ chart_data.cumulative_time | tojson }},
+    weeklyAverage: {{ chart_data.weekly_average | tojson }}
+};
+
+// Initialize Chart
+document.addEventListener('DOMContentLoaded', function() {
+    const ctx = document.getElementById('growthChart').getContext('2d');
+    
+    const chart = new Chart(ctx, {
+        type: 'line',
+        data: {
+            labels: chartData.labels,
+            datasets: [
+                {
+                    label: '日別学習時間(分)',
+                    data: chartData.dailyTime,
+                    borderColor: 'rgb(54, 162, 235)',
+                    backgroundColor: 'rgba(54, 162, 235, 0.1)',
+                    tension: 0.1,
+                    fill: true
+                },
+                {
+                    label: '累積学習時間(分)',
+                    data: chartData.cumulativeTime,
+                    borderColor: 'rgb(75, 192, 192)',
+                    backgroundColor: 'rgba(75, 192, 192, 0.1)',
+                    tension: 0.1,
+                    yAxisID: 'y1'
+                },
+                {
+                    label: '7日間平均(分)',
+                    data: chartData.weeklyAverage,
+                    borderColor: 'rgb(255, 159, 64)',
+                    backgroundColor: 'rgba(255, 159, 64, 0.1)',
+                    tension: 0.1,
+                    borderDash: [5, 5]
+                }
+            ]
+        },
+        options: {
+            responsive: true,
+            maintainAspectRatio: false,
+            interaction: {
+                mode: 'index',
+                intersect: false
+            },
+            plugins: {
+                legend: {
+                    position: 'top'
+                },
+                tooltip: {
+                    callbacks: {
+                        label: function(context) {
+                            let label = context.dataset.label || '';
+                            if (label) {
+                                label += ': ';
+                            }
+                            label += context.parsed.y + '分';
+                            if (context.parsed.y >= 60) {
+                                const hours = Math.floor(context.parsed.y / 60);
+                                const minutes = context.parsed.y % 60;
+                                label += ` (${hours}時間${minutes > 0 ? minutes + '分' : ''})`;
+                            }
+                            return label;
+                        }
+                    }
+                }
+            },
+            scales: {
+                x: {
+                    display: true,
+                    title: {
+                        display: true,
+                        text: '日付'
+                    }
+                },
+                y: {
+                    type: 'linear',
+                    display: true,
+                    position: 'left',
+                    title: {
+                        display: true,
+                        text: '日別/平均時間(分)'
+                    },
+                    beginAtZero: true
+                },
+                y1: {
+                    type: 'linear',
+                    display: true,
+                    position: 'right',
+                    title: {
+                        display: true,
+                        text: '累積時間(分)'
+                    },
+                    beginAtZero: true,
+                    grid: {
+                        drawOnChartArea: false
+                    }
+                }
+            }
+        }
+    });
+    
+    // Add click event to badges to show modal
+    const badgeContainer = document.querySelector('.badge');
+    if (badgeContainer) {
+        badgeContainer.closest('.card').addEventListener('click', function() {
+            const modal = new bootstrap.Modal(document.getElementById('achievementModal'));
+            modal.show();
+        });
+    }
+});
+</script>
 {% endblock %}
