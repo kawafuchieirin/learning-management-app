@@ -1,0 +1,106 @@
+AWSTemplateFormatVersion: '2010-09-09'
+Transform: AWS::Serverless-2016-10-31
+Description: "Learning Management Application - \u5B66\u7FD2\u8A18\u9332\u7BA1\u7406\
+  \u30A2\u30D7\u30EA\n"
+Globals:
+  Function:
+    Timeout: 300
+    MemorySize: 512
+Parameters:
+  TableNamePrefix:
+    Type: String
+    Default: learning-app
+    Description: Prefix for DynamoDB table names
+Resources:
+  LearningManagementFunction:
+    Type: AWS::Serverless::Function
+    Properties:
+      FunctionName:
+        Fn::Sub: ${AWS::StackName}-function
+      PackageType: Image
+      ImageConfig:
+        Command:
+        - lambda_handler.handler
+      Environment:
+        Variables:
+          TABLE_NAME_PREFIX:
+            Ref: TableNamePrefix
+      Events:
+        ApiEvent:
+          Type: HttpApi
+          Properties:
+            Path: /{proxy+}
+            Method: ANY
+        RootApiEvent:
+          Type: HttpApi
+          Properties:
+            Path: /
+            Method: ANY
+      Policies:
+      - DynamoDBCrudPolicy:
+          TableName:
+            Ref: StudyRecordsTable
+      - DynamoDBCrudPolicy:
+          TableName:
+            Ref: LearningRoadmapsTable
+      ImageUri: learningmanagementfunction:latest
+    Metadata:
+      DockerContext: /Users/kawabuchieirin/learning-management-app
+      DockerTag: latest
+      Dockerfile: Dockerfile
+      SamResourceId: LearningManagementFunction
+  StudyRecordsTable:
+    Type: AWS::DynamoDB::Table
+    Properties:
+      TableName:
+        Fn::Sub: ${TableNamePrefix}-study_records
+      AttributeDefinitions:
+      - AttributeName: user_id
+        AttributeType: S
+      - AttributeName: record_id
+        AttributeType: S
+      KeySchema:
+      - AttributeName: user_id
+        KeyType: HASH
+      - AttributeName: record_id
+        KeyType: RANGE
+      BillingMode: PAY_PER_REQUEST
+      StreamSpecification:
+        StreamViewType: NEW_AND_OLD_IMAGES
+  LearningRoadmapsTable:
+    Type: AWS::DynamoDB::Table
+    Properties:
+      TableName:
+        Fn::Sub: ${TableNamePrefix}-learning_roadmaps
+      AttributeDefinitions:
+      - AttributeName: user_id
+        AttributeType: S
+      - AttributeName: roadmap_id
+        AttributeType: S
+      KeySchema:
+      - AttributeName: user_id
+        KeyType: HASH
+      - AttributeName: roadmap_id
+        KeyType: RANGE
+      BillingMode: PAY_PER_REQUEST
+      StreamSpecification:
+        StreamViewType: NEW_AND_OLD_IMAGES
+Outputs:
+  ApiUrl:
+    Description: API Gateway endpoint URL
+    Value:
+      Fn::Sub: https://${ServerlessHttpApi}.execute-api.${AWS::Region}.amazonaws.com/
+  StudyRecordsTableName:
+    Description: Study Records DynamoDB table name
+    Value:
+      Ref: StudyRecordsTable
+  LearningRoadmapsTableName:
+    Description: Learning Roadmaps DynamoDB table name
+    Value:
+      Ref: LearningRoadmapsTable
+  FunctionArn:
+    Description: Lambda Function ARN
+    Value:
+      Fn::GetAtt:
+      - LearningManagementFunction
+      - Arn

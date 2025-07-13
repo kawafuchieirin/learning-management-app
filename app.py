@@ -12,16 +12,24 @@ app = Flask(__name__)
 app.secret_key = 'your-secret-key-here'
 
 # DynamoDB setup
-dynamodb = boto3.resource(
-    'dynamodb',
-    endpoint_url="http://localhost:8002",
-    region_name="ap-northeast-1",
-    aws_access_key_id="fakeMyKeyId",
-    aws_secret_access_key="fakeSecretAccessKey"
-)
+# 環境変数からエンドポイントを取得（本番環境では未設定にする）
+dynamodb_endpoint = os.environ.get('DYNAMODB_ENDPOINT_URL')
+dynamodb_config = {
+    'region_name': os.environ.get('AWS_REGION', 'ap-northeast-1')
+}
 
-TABLE_NAME = 'study_records'
-ROADMAP_TABLE_NAME = 'learning_roadmaps'
+# ローカル開発環境の場合のみエンドポイントと認証情報を設定
+if dynamodb_endpoint:
+    dynamodb_config['endpoint_url'] = dynamodb_endpoint
+    dynamodb_config['aws_access_key_id'] = os.environ.get('AWS_ACCESS_KEY_ID', 'fakeMyKeyId')
+    dynamodb_config['aws_secret_access_key'] = os.environ.get('AWS_SECRET_ACCESS_KEY', 'fakeSecretAccessKey')
+
+dynamodb = boto3.resource('dynamodb', **dynamodb_config)
+
+# テーブル名の設定（環境変数からプレフィックスを取得）
+table_prefix = os.environ.get('TABLE_NAME_PREFIX', '')
+TABLE_NAME = f'{table_prefix}-study_records' if table_prefix else 'study_records'
+ROADMAP_TABLE_NAME = f'{table_prefix}-learning_roadmaps' if table_prefix else 'learning_roadmaps'
 DEFAULT_USER_ID = 'default_user'  # For now, using single user
 
 def get_time_value(record):
@@ -1521,6 +1529,11 @@ def download_roadmap_sample_csv():
     
     return response
 
+# Lambda環境での初期化制御
+if not os.environ.get('AWS_LAMBDA_FUNCTION_NAME'):
+    # ローカル開発環境でのみinit_dbを実行
+    if dynamodb_endpoint:
+        init_db()
+
 if __name__ == '__main__':
-    init_db()
-    app.run(debug=True)
+    app.run(debug=True, host='0.0.0.0', port=8080)

@@ -1,0 +1,12 @@
+version = 0.1
+[default]
+[default.deploy]
+[default.deploy.parameters]
+stack_name = "learning-management-app"
+s3_bucket = "aws-sam-cli-managed-default-samclisourcebucket-zktijbihlpaf"
+s3_prefix = "learning-management-app"
+region = "ap-northeast-1"
+confirm_changeset = true
+capabilities = "CAPABILITY_IAM"
+parameter_overrides = "TableNamePrefix=learning-app"
+image_repositories = []

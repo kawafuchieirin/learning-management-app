@@ -117,6 +117,10 @@ def start_flask():
         # 環境変数を設定してFlaskアプリを起動
         env = os.environ.copy()
         env['FLASK_ENV'] = 'development'
+        env['DYNAMODB_ENDPOINT_URL'] = 'http://localhost:8002'
+        env['AWS_ACCESS_KEY_ID'] = 'fakeMyKeyId'
+        env['AWS_SECRET_ACCESS_KEY'] = 'fakeSecretAccessKey'
+        env['AWS_REGION'] = 'ap-northeast-1'
         # WERKZEUG_RUN_MAINは削除（問題の原因）
         
         # Flaskアプリを起動
